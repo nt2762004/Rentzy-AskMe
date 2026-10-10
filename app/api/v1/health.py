@@ -3,7 +3,7 @@ from app.core.config import settings
 
 router = APIRouter()
 
-@router.get("/health", tags=["Health"])
+@router.api_route("/health", methods=["GET", "HEAD"], tags=["Health"])
 def health_check():
     return {
         "status": "online",

@@ -48,7 +48,7 @@ static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     index_path = os.path.join(static_dir, "index.html")
     if os.path.exists(index_path):

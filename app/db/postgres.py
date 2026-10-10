@@ -11,11 +11,19 @@ logger = logging.getLogger(__name__)
 
 # Thử kết nối PostgreSQL; nếu Postgres chưa bật Docker sẽ tự động fallback sang SQLite local
 try:
-    db_url = settings.DATABASE_URL
+    db_url = os.getenv("DATABASE_URL") or settings.DATABASE_URL
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
     elif db_url.startswith("postgresql://") and "+psycopg2" not in db_url:
         db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+    # Tối ưu cho Neon: loại bỏ channel_binding nếu có để tránh xung đột libpq cũ trên Linux
+    if "channel_binding=require&" in db_url:
+        db_url = db_url.replace("channel_binding=require&", "")
+    elif "&channel_binding=require" in db_url:
+        db_url = db_url.replace("&channel_binding=require", "")
+    elif "?channel_binding=require" in db_url:
+        db_url = db_url.replace("?channel_binding=require", "")
 
     engine = create_engine(
         db_url,
