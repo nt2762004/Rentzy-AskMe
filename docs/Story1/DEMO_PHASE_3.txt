@@ -1,0 +1,60 @@
+================================================================================
+KỊCH BẢN DEMO STORY 1 - PHASE 3: DOCUMENT MANAGEMENT & CONTENT INSPECTION
+================================================================================
+
+I. MỤC TIÊU PHASE
+--------------------------------------------------------------------------------
+- Mục tiêu: Truy vấn danh sách tài liệu tri thức trong PostgreSQL, kiểm tra thông tin chi tiết bài viết và lọc linh hoạt theo các tiêu chí `topic` (Intent) và `status` từ kho dữ liệu Rentzy.
+- Swagger API Path: GET /api/v1/knowledge/documents
+
+
+II. DANH SÁCH TESTCASE DEMO TRÊN SWAGGER
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+TESTCASE 3.1: Lấy toàn bộ danh sách tài liệu trong PostgreSQL
+--------------------------------------------------------------------------------
+- Swagger API: GET /api/v1/knowledge/documents
+- Input Parameters: Không truyền query param
+- Expected Response (HTTP 200 OK):
+  [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "record_id": "ABC_001",
+      "topic": "rentzy_overview",
+      "sub_topic": "gioi_thieu",
+      "question": "Rentzy là gì?",
+      "answer": "Rentzy là dịch vụ tủ đồ thời trang cho thuê cao cấp...",
+      "status": "active",
+      "source_url": "https://rentzy.vn"
+    }
+  ]
+- Giải thích kết quả: Trả về danh sách tất cả 56 tài liệu tri thức hiện có trong cơ sở dữ liệu PostgreSQL.
+
+--------------------------------------------------------------------------------
+TESTCASE 3.2: Lọc danh sách tài liệu theo Topic "deposit_policy" (Chính sách đặt cọc)
+--------------------------------------------------------------------------------
+- Swagger API: GET /api/v1/knowledge/documents?topic=deposit_policy
+- Input Parameters: topic = "deposit_policy"
+- Expected Response (HTTP 200 OK):
+  Mảng danh sách các tài liệu thuộc chủ đề "deposit_policy" (ví dụ: cọc bằng CCCD, cọc bằng tiền mặt, hình thức cọc).
+- Giải thích kết quả: Hệ thống lọc chính xác các bài viết có thuộc tính topic == "deposit_policy".
+
+--------------------------------------------------------------------------------
+TESTCASE 3.3: Lọc danh sách tài liệu theo trạng thái Status (Filter Status)
+--------------------------------------------------------------------------------
+- Swagger API: GET /api/v1/knowledge/documents?status=active
+- Input Parameters: status = "active"
+- Expected Response (HTTP 200 OK):
+  Danh sách tất cả các tài liệu đang có status == "active".
+- Giải thích kết quả: Giúp người quản trị dễ dàng rà soát danh mục các tài liệu đang cho phép RAG Search truy xuất.
+
+--------------------------------------------------------------------------------
+TESTCASE 3.4: Lọc kết hợp đồng thời cả Topic và Status (Multi-filter)
+--------------------------------------------------------------------------------
+- Swagger API: GET /api/v1/knowledge/documents?topic=rental_pricing&status=active
+- Input Parameters: topic = "rental_pricing", status = "active"
+- Expected Response (HTTP 200 OK):
+  Danh sách các tài liệu thuộc topic "rental_pricing" (giá thuê & thời gian thuê) thỏa mãn trạng thái active.
+- Giải thích kết quả: Đảm bảo khả năng truy vấn đa điều kiện chuẩn xác trên PostgreSQL Database.
+================================================================================

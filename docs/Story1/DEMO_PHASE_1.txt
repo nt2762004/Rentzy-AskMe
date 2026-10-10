@@ -1,0 +1,36 @@
+================================================================================
+KỊCH BẢN DEMO STORY 1 - PHASE 1: SYSTEM INFRASTRUCTURE & HEALTH CHECK API
+================================================================================
+
+I. MỤC TIÊU PHASE & SWAGGER API PATH
+--------------------------------------------------------------------------------
+- Mục tiêu: Kiểm tra hạ tầng hệ thống, kết nối cơ sở dữ liệu và xác nhận API Server FastAPI cùng trang Swagger UI tự động tạo đang hoạt động trực tuyến.
+- Swagger API Path: GET /api/v1/health
+
+
+II. DANH SÁCH TESTCASE DEMO TRÊN SWAGGER
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+TESTCASE 1.1: Kiểm tra trạng thái sức khỏe hệ thống (Health Check API)
+--------------------------------------------------------------------------------
+- Swagger API: GET /api/v1/health
+- Input Query Parameters: Không có (None)
+- Expected Response (HTTP 200 OK):
+  {
+    "status": "online",
+    "project": "Rentzy Knowledge Base API",
+    "api_version": "/api/v1",
+    "python_version": "3.12"
+  }
+- Giải thích kết quả: Endpoint trả về trạng thái 200 OK, xác nhận API Server FastAPI đang vận hành bình thường trên môi trường Python 3.12.
+
+--------------------------------------------------------------------------------
+TESTCASE 1.2: Kiểm tra trang giao diện OpenAPI / Swagger UI
+--------------------------------------------------------------------------------
+- Swagger API / URL: GET /docs
+- Input: Truy cập trình duyệt Web đường dẫn http://localhost:8000/docs
+- Expected Response (HTTP 200 OK):
+  Trang giao diện Swagger UI hiển thị đầy đủ danh sách các API Endpoint của Rentzy Knowledge Base.
+- Giải thích kết quả: OpenAPI Schema được tự động sinh chính xác từ các Pydantic Router Models của hệ thống.
+================================================================================

@@ -1,0 +1,31 @@
+================================================================================
+HƯỚNG DẪN KHỞI CHẠY SERVER HỆ THỐNG RENTZY ASKME AI ENGINE
+================================================================================
+
+1. CHẠY TỰ ĐỘNG BẰNG FILE BAT (KHUYÊN DÙNG):
+--------------------------------------------------------------------------------
+Chỉ cần nhấp đôi chuột vào file `run_server.bat` (hoặc gõ `.\run_server.bat` trong Terminal).
+File này sẽ tự động:
+  - Bật Docker Containers (PostgreSQL 16 & Redis 7).
+  - Tự động kích hoạt venv và chạy FastAPI Server (`http://localhost:8000/docs`).
+
+
+2. LỆNH THỦ CÔNG QUA TERMINAL:
+--------------------------------------------------------------------------------
+# Bước 1: Khởi động Docker Containers
+docker compose up -d
+
+# Bước 2: Khởi chạy FastAPI Server Local (Uvicorn)
+.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+
+3. ĐƯỜNG DẪN TRUY CẬP GIAO DIỆN SWAGGER UI DEMO:
+--------------------------------------------------------------------------------
+👉 Swagger UI: http://localhost:8000/docs
+👉 Health Check API: http://localhost:8000/api/v1/health
+
+
+4. LỆNH CHẠY BỘ KIỂM THỬ TỰ ĐỘNG (PYTEST AUTOMATED SUITE):
+--------------------------------------------------------------------------------
+.venv\Scripts\python -m pytest
+================================================================================

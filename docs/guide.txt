@@ -1,0 +1,32 @@
+================================================================================
+HƯỚNG DẪN KHỞI CHẠY SERVER HỆ THỐNG RENTZY ASKME AI ENGINE
+================================================================================
+
+1. LỆNH KHỞI CHẠY SERVER LOCAL (UVICORN):
+--------------------------------------------------------------------------------
+Mở terminal PowerShell / CMD tại thư mục gốc dự án Rentzy và chạy lệnh:
+
+.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+
+2. ĐƯỜNG DẪN TRUY CẬP GIAO DIỆN SWAGGER UI DEMO:
+--------------------------------------------------------------------------------
+Sau khi Server khởi chạy thành công, truy cập trình duyệt Web tại:
+
+👉 Swagger UI: http://localhost:8000/docs
+👉 Health Check API: http://localhost:8000/api/v1/health
+
+
+3. LỆNH CHẠY BỘ KIỂM THỬ TỰ ĐỘNG (PYTEST AUTOMATED SUITE):
+--------------------------------------------------------------------------------
+Để chạy toàn bộ 29 testcases tự động của Story 1 & Story 2:
+
+.venv\Scripts\python -m pytest
+================================================================================
+st:8000/api/v1/health
+
+
+4. LỆNH CHẠY BỘ KIỂM THỬ TỰ ĐỘNG (PYTEST AUTOMATED SUITE):
+--------------------------------------------------------------------------------
+.venv\Scripts\python -m pytest
+================================================================================

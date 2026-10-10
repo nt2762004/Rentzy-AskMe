@@ -1,0 +1,58 @@
+================================================================================
+KỊCH BẢN DEMO STORY 1 - PHASE 2: STORAGE INFRASTRUCTURE & DATA INGESTION ENGINE
+================================================================================
+
+I. MỤC TIÊU PHASE & SWAGGER API PATH
+--------------------------------------------------------------------------------
+- Mục tiêu: Kiểm thử quá trình nạp tự động 56 bản ghi từ file Excel Rentzy_AskMe_AI_Training_Data.xlsx vào PostgreSQL 16 và tạo Vector 3072D (gemini-embedding-2) lưu đồng bộ trên Qdrant Cloud, cũng như khả năng nạp tài liệu thủ công qua API Ingest.
+- Swagger API Paths:
+  1. POST /api/v1/knowledge/seed-excel (Nạp 56 bản ghi tri thức từ Excel)
+  2. POST /api/v1/knowledge/ingest (Nạp bài viết mới thủ công)
+
+
+II. DANH SÁCH TESTCASE DEMO TRÊN SWAGGER
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+TESTCASE 2.1: Nạp tự động 56 bản ghi từ file Excel Rentzy (Seed Excel API)
+--------------------------------------------------------------------------------
+- Swagger API: POST /api/v1/knowledge/seed-excel
+- Input: Request HTTP POST (No Body)
+- Expected Response (HTTP 200 OK):
+  {
+    "status": "success",
+    "message": "Nạp dữ liệu Excel thành công!",
+    "total_ingested": 56
+  }
+- Giải thích kết quả: Toàn bộ 56 bản ghi kịch bản hỏi đáp chính thức từ file Excel Rentzy đã được đọc, làm sạch, tạo vector embedding 3072 chiều và lưu đồng bộ vào PostgreSQL & Qdrant Cloud với các topic chuẩn như `rentzy_overview`, `deposit_policy`, `rental_pricing`, `deposit_refund`, `showroom_fitting`, `membership`...
+
+--------------------------------------------------------------------------------
+TESTCASE 2.2: Nạp bài viết tri thức mới thủ công (Ingest Manual Document API)
+--------------------------------------------------------------------------------
+- Swagger API: POST /api/v1/knowledge/ingest
+- Input Request Body:
+{
+  "title": "membership - xem_goi",
+  "content": "Câu hỏi: Rentzy có các gói thành viên ưu đãi nào dành cho khách thuê thường xuyên không? Trả lời: Rentzy cung cấp các gói thành viên Silver, Gold và VIP với ưu đãi giảm giá thuê từ 10% đến 25% kèm miễn phí vận chuyển 2 chiều.",
+  "metadata": {
+    "record_id": "REC_057",
+    "topic": "membership",
+    "sub_topic": "xem_goi",
+    "question": "Rentzy có các gói thành viên ưu đãi nào dành cho khách thuê thường xuyên không?",
+    "answer": "Rentzy cung cấp các gói thành viên Silver, Gold và VIP với ưu đãi giảm giá thuê từ 10% đến 25% kèm miễn phí vận chuyển 2 chiều.",
+    "status": "active",
+    "source_url": "https://rentzy.vn/membership",
+    "updated_at": "2026-10-01",
+    "approver": "Rentzy Business Team",
+    "version": "1.0"
+  }
+}
+
+
+- Expected Response (HTTP 200 OK):
+  {
+    "status": "success",
+    "message": "Ingest document thành công",
+    "document_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  }
+- Giải thích kết quả: Hệ thống khởi tạo tài liệu mới với `topic="membership"` và `sub_topic="xem_goi"`, sinh vector 3072D bằng Gemini và lưu thành công bài viết thủ công vào CSDL.

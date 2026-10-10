@@ -1,0 +1,42 @@
+# Environment Variables (BẢO MẬT: TUYỆT ĐỐI KHÔNG PUSH)
+.env
+.env.local
+*.env
+
+# Python Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE & OS Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Temp files
+*.log
+scratch/
+tmp/
+
+# Data & Docker volume mounts (nếu có lưu local)
+data/
+*.sqlite3

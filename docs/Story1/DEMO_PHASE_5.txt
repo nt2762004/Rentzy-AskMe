@@ -1,0 +1,308 @@
+================================================================================
+KỊCH BẢN DEMO STORY 1 - PHASE 5: MULTI-METADATA SEMANTIC RAG SEARCH ENGINE
+================================================================================
+
+I. MỤC TIÊU PHASE & SWAGGER API PATH
+--------------------------------------------------------------------------------
+- Mục tiêu: Kiểm thử hệ thống tìm kiếm ngữ nghĩa RAG (Multi-Metadata Semantic RAG Search Engine) trên kho dữ liệu thực tế của Rentzy với các cơ chế tìm kiếm vector (Gemini 3072D embeddings), lọc đa điều kiện theo Metadata (`filter: { status, topic, sub_topic, record_id }`) và kiểm soát số lượng kết quả (`top_k`).
+- Swagger API Path: POST /api/v1/knowledge/search
+
+
+II. DANH SÁCH TESTCASE CHI TIẾT DEMO TRÊN SWAGGER
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+TESTCASE 5.1: Tìm kiếm ngữ nghĩa chuẩn xác theo câu hỏi tự nhiên (Semantic Search)
+--------------------------------------------------------------------------------
+- Input Request Body:
+  {
+    "query": "Rentzy là dịch vụ gì và cung cấp những sản phẩm nào?",
+    "top_k": 3,
+    "filter": {
+      "topic": "rentzy_overview",
+      "status": "active"
+    }
+  }
+- Expected Response (HTTP 200 OK):
+  {
+    "query": "Rentzy là dịch vụ gì và cung cấp những sản phẩm nào?",
+    "total_results": 1,
+    "results": [
+      {
+        "chunk_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "question": "Rentzy là gì?",
+        "answer": "Rentzy là dịch vụ tủ đồ thời trang cho thuê cao cấp...",
+        "content": "Câu hỏi: Rentzy là gì?\nTrả lời: Rentzy là dịch vụ tủ đồ thời trang cho thuê...",
+        "score": 0.8924,
+        "metadata": {
+          "document_id": "doc_001",
+          "chunk_index": 0,
+          "record_id": "REC_001",
+          "sub_topic": "gioi_thieu",
+          "question": "Rentzy là gì?",
+          "answer": "Rentzy là dịch vụ tủ đồ thời trang cho thuê cao cấp...",
+          "status": "active",
+          "topic": "rentzy_overview",
+          "source_url": "https://rentzy.vn",
+          "updated_at": "2026-10-01",
+          "approver": "Rentzy Business Team",
+          "version": "1.0"
+        }
+      }
+    ]
+  }
+- Giải thích kết quả: Hệ thống nhúng câu hỏi bằng Gemini 3072D và thực hiện vector search trên Qdrant Cloud. Kết quả trả về tri thức thuộc `topic="rentzy_overview"` có độ tương đồng ngữ nghĩa cao nhất.
+
+--------------------------------------------------------------------------------
+TESTCASE 5.2: Lọc theo Metadata Topic "deposit_policy" (Chính sách đặt cọc)
+--------------------------------------------------------------------------------
+- Input Request Body:
+  {
+    "query": "Thủ tục đặt cọc khi thuê đồ như thế nào?",
+    "top_k": 5,
+    "filter": {
+      "topic": "deposit_policy",
+      "status": "active"
+    }
+  }
+- Expected Response (HTTP 200 OK):
+  {
+    "query": "Thủ tục đặt cọc khi thuê đồ như thế nào?",
+    "total_results": 2,
+    "results": [
+      {
+        "chunk_id": "chunk_dep_01",
+        "question": "Tôi có cần đặt cọc khi thuê sản phẩm không?",
+        "score": 0.8654,
+        "metadata": {
+          "topic": "deposit_policy",
+          "sub_topic": "hinh_thuc_coc"
+        }
+      },
+      {
+        "chunk_id": "chunk_dep_02",
+        "question": "Có thể cọc bằng CCCD hay tiền mặt không?",
+        "score": 0.8123,
+        "metadata": {
+          "topic": "deposit_policy",
+          "sub_topic": "hinh_thuc_coc"
+        }
+      }
+    ]
+  }
+- Giải thích kết quả: Qdrant payload filter lọc chính xác các document có `payload.topic == "deposit_policy"`, loại bỏ hoàn toàn các bài viết ở chủ đề khác.
+
+--------------------------------------------------------------------------------
+TESTCASE 5.3: Tự động loại bỏ tri thức đã ẩn (Filter status = active)
+--------------------------------------------------------------------------------
+- Input Request Body:
+  {
+    "query": "Bao lâu nhận lại cọc sau khi trả đồ?",
+    "top_k": 5,
+    "filter": {
+      "topic": "deposit_refund",
+      "status": "active"
+    }
+  }
+- Expected Response (HTTP 200 OK):
+  {
+    "query": "Bao lâu nhận lại cọc sau khi trả đồ?",
+    "total_results": 1,
+    "results": [
+      {
+        "chunk_id": "chunk_ref_01",
+        "question": "Bao lâu thì tôi nhận lại tiền đặt cọc sau khi trả đồ?",
+        "score": 0.8712,
+        "metadata": {
+          "topic": "deposit_refund",
+          "sub_topic": "thoi_gian_hoan_coc",
+          "status": "active"
+        }
+      }
+    ]
+  }
+- Giải thích kết quả: Hệ thống chỉ truy xuất các chunk có `status="active"`. Các bài bị ẩn (`inactive`) tự động bị loại khỏi kết quả RAG Search.
+
+--------------------------------------------------------------------------------
+TESTCASE 5.4: Giới hạn số lượng kết quả trả về (Top K Limit = 2)
+--------------------------------------------------------------------------------
+- Input Request Body:
+  {
+    "query": "Tính giá thuê đồ theo ngày như thế nào?",
+    "top_k": 2,
+    "filter": {
+      "topic": "rental_pricing"
+    }
+  }
+- Expected Response (HTTP 200 OK):
+  {
+    "query": "Tính giá thuê đồ theo ngày như thế nào?",
+    "total_results": 2,
+    "results": [
+      {
+        "chunk_id": "chunk_price_01",
+        "score": 0.9102,
+        "metadata": {
+          "topic": "rental_pricing",
+          "sub_topic": "thoi_gian_va_phi_thue"
+        }
+      },
+      {
+        "chunk_id": "chunk_price_02",
+        "score": 0.8431,
+        "metadata": {
+          "topic": "rental_pricing",
+          "sub_topic": "thoi_gian_va_phi_thue"
+        }
+      }
+    ]
+  }
+- Giải thích kết quả: Tham số `top_k=2` giới hạn chính xác tối đa 2 kết quả có score cao nhất trả về cho client.
+
+--------------------------------------------------------------------------------
+TESTCASE 5.5: Tìm kiếm mở rộng không lọc Topic (Global Search across all topics)
+--------------------------------------------------------------------------------
+- Input Request Body:
+  {
+    "query": "Thời gian giao nhận và đổi trả trang phục",
+    "top_k": 3,
+    "filter": {
+      "status": "active"
+    }
+  }
+- Expected Response (HTTP 200 OK):
+  {
+    "query": "Thời gian giao nhận và đổi trả trang phục",
+    "total_results": 3,
+    "results": [
+      {
+        "chunk_id": "chunk_rec_01",
+        "score": 0.8850,
+        "metadata": {
+          "topic": "receive_return",
+          "sub_topic": "nhan_va_tra"
+        }
+      },
+      {
+        "chunk_id": "chunk_rec_02",
+        "score": 0.8120,
+        "metadata": {
+          "topic": "receive_return",
+          "sub_topic": "kiem_tra_khi_nhan"
+        }
+      },
+      {
+        "chunk_id": "chunk_ord_01",
+        "score": 0.6940,
+        "metadata": {
+          "topic": "order_support",
+          "sub_topic": "theo_doi_don"
+        }
+      }
+    ]
+  }
+- Giải thích kết quả: Khi không chỉ định topic, RAG search engine quét toàn bộ kho tri thức đa chủ đề (`receive_return`, `order_support`...) và xếp hạng kết quả theo độ tương đồng ngữ nghĩa.
+
+--------------------------------------------------------------------------------
+TESTCASE 5.6: Lọc chính xác theo Mã nghiệp vụ Record ID (Filter record_id)
+--------------------------------------------------------------------------------
+- Input Request Body:
+  {
+    "query": "Quy định cọc",
+    "top_k": 1,
+    "filter": {
+      "record_id": "REC_001"
+    }
+  }
+- Expected Response (HTTP 200 OK):
+  {
+    "query": "Quy định cọc",
+    "total_results": 1,
+    "results": [
+      {
+        "chunk_id": "chunk_rec001",
+        "metadata": {
+          "record_id": "REC_001",
+          "topic": "rentzy_overview"
+        }
+      }
+    ]
+  }
+- Giải thích kết quả: Cho phép bộ lọc truy vết chính xác duy nhất bản ghi có `record_id == "REC_001"`.
+
+--------------------------------------------------------------------------------
+TESTCASE 5.7: Tìm kiếm với câu hỏi dài tự nhiên (Complex Natural Language Query)
+--------------------------------------------------------------------------------
+- Input Request Body:
+  {
+    "query": "Tôi muốn biết quy trình thử đồ trực tiếp tại showroom và thời gian nhận lại tiền cọc?",
+    "top_k": 2,
+    "filter": {
+      "status": "active"
+    }
+  }
+- Expected Response (HTTP 200 OK):
+  {
+    "query": "Tôi muốn biết quy trình thử đồ trực tiếp tại showroom và thời gian nhận lại tiền cọc?",
+    "total_results": 2,
+    "results": [
+      {
+        "chunk_id": "chunk_show_01",
+        "score": 0.8753,
+        "metadata": {
+          "topic": "showroom_fitting",
+          "sub_topic": "thu_do"
+        }
+      },
+      {
+        "chunk_id": "chunk_ref_01",
+        "score": 0.8320,
+        "metadata": {
+          "topic": "deposit_refund",
+          "sub_topic": "thoi_gian_hoan_coc"
+        }
+      }
+    ]
+  }
+- Giải thích kết quả: Gemini 3072D embedding xử lý xuất sắc câu truy vấn dài chứa nhiều ý ngữ nghĩa, trích xuất đúng tri thức về thử đồ (`showroom_fitting`) và hoàn cọc (`deposit_refund`).
+
+--------------------------------------------------------------------------------
+TESTCASE 5.8: Validation lỗi dữ liệu đầu vào - Query trống (Validation Error)
+--------------------------------------------------------------------------------
+- Input Request Body:
+  {
+    "query": "",
+    "top_k": 3
+  }
+- Expected Response (HTTP 422 Unprocessable Entity):
+  {
+    "detail": [
+      {
+        "loc": ["body", "query"],
+        "msg": "Field required",
+        "type": "missing"
+      }
+    ]
+  }
+- Giải thích kết quả: FastAPI Pydantic schema chặn ngay các request thiếu trường bắt buộc `query` trước khi thực hiện truy vấn vector.
+
+--------------------------------------------------------------------------------
+TESTCASE 5.9: Validation lỗi giá trị Top_K vượt quá giới hạn (Invalid Top_K)
+--------------------------------------------------------------------------------
+- Input Request Body:
+  {
+    "query": "Quy định thử đồ",
+    "top_k": 0
+  }
+- Expected Response (HTTP 422 Unprocessable Entity):
+  {
+    "detail": [
+      {
+        "loc": ["body", "top_k"],
+        "msg": "Input should be greater than or equal to 1",
+        "type": "greater_than_equal"
+      }
+    ]
+  }
+- Giải thích kết quả: Schema ràng buộc `top_k >= 1`, chặn các giá trị không hợp lệ.
+================================================================================
