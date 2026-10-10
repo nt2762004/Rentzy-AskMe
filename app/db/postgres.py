@@ -11,8 +11,14 @@ logger = logging.getLogger(__name__)
 
 # Thử kết nối PostgreSQL; nếu Postgres chưa bật Docker sẽ tự động fallback sang SQLite local
 try:
+    db_url = settings.DATABASE_URL
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif db_url.startswith("postgresql://") and "+psycopg2" not in db_url:
+        db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
     engine = create_engine(
-        settings.DATABASE_URL,
+        db_url,
         pool_pre_ping=True,
         echo=settings.DEBUG
     )
