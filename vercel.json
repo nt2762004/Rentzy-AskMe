@@ -1,4 +1,6 @@
 {
+  "buildCommand": null,
+  "outputDirectory": ".",
   "rewrites": [
     { "source": "/", "destination": "/static/index.html" },
     { "source": "/static/(.*)", "destination": "/static/$1" }
