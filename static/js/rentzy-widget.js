@@ -947,6 +947,7 @@
     `;
 
     if (
+      data.need_clarification &&
       Array.isArray(data.suggested_options) &&
       data.suggested_options.length > 0
     ) {

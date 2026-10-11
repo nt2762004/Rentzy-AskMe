@@ -130,59 +130,13 @@ Dựa vào ngữ cảnh thông tin chính thức dưới đây từ hệ thống
     if state["intent"] == IntentEnum.MEMBERSHIP.value and "https://rentzy.vn/member-ship/" not in reply:
         reply += "\n\nNàng có thể tham khảo chi tiết bảng quyền lợi và đăng ký gói tại đây nhé: https://rentzy.vn/member-ship/"
 
-    suggested_options = get_contextual_suggested_options(state["intent"], state["message"])
-
     return {
         "reply_message": reply,
         "sources": sources,
         "fallback_count": 0,
         "suggest_sales": False,
-        "suggested_options": suggested_options
+        "suggested_options": None
     }
-
-def get_contextual_suggested_options(intent: str, message: str = "") -> List[str]:
-    """Trả về danh sách 3-4 lựa chọn gợi ý phù hợp cho từng câu trả lời, gắn nhãn (Upcoming) nếu tính năng chưa mở."""
-    if intent == IntentEnum.MEMBERSHIP.value:
-        return [
-            "Quyền lợi gói Silver & Gold",
-            "Giới thiệu Rentzy",
-            "Tìm trang phục (Upcoming)",
-            "Chính sách cọc đồ (Upcoming)"
-        ]
-    elif intent == IntentEnum.RENTZY_OVERVIEW.value:
-        return [
-            "Gói thành viên",
-            "Địa chỉ Showroom",
-            "Tìm trang phục (Upcoming)",
-            "Xem giá và lịch thuê (Upcoming)"
-        ]
-    elif intent in (IntentEnum.PRODUCT_SEARCH.value, IntentEnum.PRODUCT_PRICE.value):
-        return [
-            "Giới thiệu Rentzy",
-            "Gói thành viên",
-            "Xem giá và lịch thuê (Upcoming)",
-            "Liên hệ CSKH"
-        ]
-    elif intent in (IntentEnum.RENTAL_PRICING.value, IntentEnum.DEPOSIT_POLICY.value, IntentEnum.DEPOSIT_REFUND.value):
-        return [
-            "Gói thành viên",
-            "Giới thiệu Rentzy",
-            "Tìm trang phục (Upcoming)",
-            "Liên hệ CSKH"
-        ]
-    elif intent == IntentEnum.CONTACT_SUPPORT.value:
-        return [
-            "Giới thiệu Rentzy",
-            "Gói thành viên",
-            "Tìm trang phục (Upcoming)"
-        ]
-    else:
-        return [
-            "Giới thiệu Rentzy",
-            "Gói thành viên",
-            "Tìm trang phục (Upcoming)",
-            "Chính sách thuê đồ (Upcoming)"
-        ]
 
 def ask_clarification_node(state: AgentState) -> Dict[str, Any]:
     """Node 3: Sinh câu hỏi làm rõ nhu cầu khi yêu cầu mơ hồ hoặc có nhiều ý định."""
@@ -204,12 +158,6 @@ def ask_clarification_node(state: AgentState) -> Dict[str, Any]:
 def handle_fallback_node(state: AgentState) -> Dict[str, Any]:
     """Node 4: Xử lý khi độ tin cậy thấp hoặc không hiểu nhu cầu. Đếm số lần thất bại."""
     current_count = session_service.increment_fallback_count(state["session_id"])
-    suggested_options = [
-        "Giới thiệu Rentzy",
-        "Gói thành viên",
-        "Tìm trang phục (Upcoming)",
-        "Liên hệ CSKH"
-    ]
 
     if current_count >= 2:
         reply = (
@@ -221,15 +169,15 @@ def handle_fallback_node(state: AgentState) -> Dict[str, Any]:
             "reply_message": reply,
             "suggest_sales": True,
             "fallback_count": current_count,
-            "suggested_options": suggested_options
+            "suggested_options": None
         }
 
-    reply = "Dạ Rentzy chưa hiểu rõ câu hỏi này của Nàng lắm. Nàng có thể hỏi lại ngắn gọn hơn hoặc chọn các gợi ý bên dưới nhé!"
+    reply = "Dạ Rentzy chưa hiểu rõ câu hỏi này của Nàng lắm. Nàng có thể hỏi lại ngắn gọn hơn hoặc cho Rentzy biết Nàng đang cần hỗ trợ về dịch vụ thuê đồ, gói thành viên hay chính sách nào được không ạ?"
     return {
         "reply_message": reply,
         "suggest_sales": False,
         "fallback_count": current_count,
-        "suggested_options": suggested_options
+        "suggested_options": None
     }
 
 def contact_sales_node(state: AgentState) -> Dict[str, Any]:
@@ -244,22 +192,12 @@ def contact_sales_node(state: AgentState) -> Dict[str, Any]:
         "reply_message": reply,
         "suggest_sales": True,
         "fallback_count": 0,
-        "suggested_options": [
-            "Giới thiệu Rentzy",
-            "Gói thành viên",
-            "Tìm trang phục (Upcoming)"
-        ]
+        "suggested_options": None
     }
 
 def out_of_scope_node(state: AgentState) -> Dict[str, Any]:
     """Node 6: Xử lý các câu hỏi ngoài phạm vi. Tự động đề xuất Sales nếu lặp lại 2 lần."""
     current_count = session_service.increment_fallback_count(state["session_id"])
-    suggested_options = [
-        "Giới thiệu Rentzy",
-        "Gói thành viên",
-        "Tìm trang phục (Upcoming)",
-        "Liên hệ CSKH"
-    ]
 
     if current_count >= 2:
         reply = (
@@ -271,15 +209,15 @@ def out_of_scope_node(state: AgentState) -> Dict[str, Any]:
             "reply_message": reply,
             "suggest_sales": True,
             "fallback_count": current_count,
-            "suggested_options": suggested_options
+            "suggested_options": None
         }
 
-    reply = "Dạ Rentzy là tủ đồ thời trang cho thuê, hiện tại mình chỉ hỗ trợ giải đáp về dịch vụ và ưu đãi của Rentzy thôi ạ. Nàng có thể tham khảo các gợi ý bên dưới nhé!"
+    reply = "Dạ Rentzy là tủ đồ thời trang cho thuê, hiện tại mình chỉ hỗ trợ các câu hỏi liên quan đến sản phẩm, dịch vụ và chính sách của Rentzy thôi ạ. Nàng có cần tìm hiểu về thuê váy đi tiệc, gói membership hay chính sách cọc đồ không ạ?"
     return {
         "reply_message": reply,
         "suggest_sales": False,
         "fallback_count": current_count,
-        "suggested_options": suggested_options
+        "suggested_options": None
     }
 
 # 3. Danh sách các Intent đang mở thử nghiệm (Active Intents)
@@ -296,17 +234,15 @@ def upcoming_feature_node(state: AgentState) -> Dict[str, Any]:
 
     reply = (
         f"Dạ Nàng ơi! Tính năng **{title}** hiện đang được Rentzy phát triển và sẽ sớm ra mắt (**Upcoming**) ạ.\n\n"
-        "Nàng có thể tham khảo trước thông tin dịch vụ hoặc gói hội viên bên dưới nhé!"
+        "Nàng có thể tham khảo trước thông tin dịch vụ hoặc gói hội viên của Rentzy nhé!"
     )
-
-    suggested_options = get_contextual_suggested_options(state["intent"], state["message"])
 
     return {
         "reply_message": reply,
         "sources": [],
         "fallback_count": 0,
         "suggest_sales": False,
-        "suggested_options": suggested_options
+        "suggested_options": None
     }
 
 # 4. Định nghĩa rẽ nhánh điều kiện (Router Logic)
