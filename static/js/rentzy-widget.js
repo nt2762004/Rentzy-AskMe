@@ -63,7 +63,7 @@
      CSS INJECTION (LINK + INLINE CRITICAL FALLBACK)
      ============================================================ */
 
-  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=5.5`;
+  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=5.6`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -189,6 +189,120 @@
         line-height: 1.1 !important;
         flex-shrink: 0 !important;
         margin-left: 6px !important;
+      }
+      .rw-address-badge {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 3px !important;
+        padding: 7px 11px !important;
+        margin: 4px 0 2px 0 !important;
+        border-radius: 9px !important;
+        background: #fdfbf7 !important;
+        color: #4a3610 !important;
+        border: 1px solid rgba(197, 160, 89, 0.45) !important;
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+        text-decoration: none !important;
+        box-shadow: 0 1.5px 5px rgba(197, 160, 89, 0.1) !important;
+        transition: all 0.18s ease !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .rw-address-badge:hover {
+        background: #fcf6eb !important;
+        border-color: #c5a059 !important;
+        color: #382705 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 3px 9px rgba(197, 160, 89, 0.22) !important;
+      }
+      .rw-addr-main {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+      }
+      .rw-addr-main .rw-hl-icon {
+        color: #c5a059 !important;
+        width: 13px !important;
+        height: 13px !important;
+        flex-shrink: 0 !important;
+        margin-top: 2px !important;
+      }
+      .rw-addr-text {
+        font-weight: 600 !important;
+        color: #2b2620 !important;
+      }
+      .rw-addr-hint {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 3px !important;
+        font-size: 10.5px !important;
+        font-weight: 600 !important;
+        color: #b3862b !important;
+        margin-left: 19px !important;
+        letter-spacing: 0.2px !important;
+        transition: color 0.15s ease !important;
+      }
+      .rw-address-badge:hover .rw-addr-hint {
+        color: #e05263 !important;
+      }
+      .rw-membership-card {
+        margin-top: 10px !important;
+        padding-top: 8px !important;
+        border-top: 1px dashed rgba(232, 228, 220, 0.9) !important;
+        width: 100% !important;
+      }
+      .rw-membership-btn {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        padding: 9px 13px !important;
+        border-radius: 9px !important;
+        background: linear-gradient(135deg, #1f1d1a 0%, #2f2a24 100%) !important;
+        color: #f7e6c4 !important;
+        border: 1px solid #c5a059 !important;
+        text-decoration: none !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12) !important;
+        transition: all 0.2s ease !important;
+        box-sizing: border-box !important;
+      }
+      .rw-membership-btn:hover {
+        background: linear-gradient(135deg, #2b2722 0%, #3d362e 100%) !important;
+        color: #ffffff !important;
+        border-color: #dfba73 !important;
+        transform: translateY(-1.5px) !important;
+        box-shadow: 0 5px 14px rgba(197, 160, 89, 0.28) !important;
+      }
+      .rw-mbtn-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 7px !important;
+        min-width: 0 !important;
+      }
+      .rw-mbtn-icon {
+        font-size: 14px !important;
+        line-height: 1 !important;
+        flex-shrink: 0 !important;
+      }
+      .rw-mbtn-text {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .rw-mbtn-arrow {
+        width: 14px !important;
+        height: 14px !important;
+        flex-shrink: 0 !important;
+        color: #c5a059 !important;
+        transition: transform 0.18s ease !important;
+      }
+      .rw-membership-btn:hover .rw-mbtn-arrow {
+        transform: translateX(3px) !important;
+        color: #ffffff !important;
       }
     `;
     document.head.appendChild(styleEl);
@@ -328,7 +442,18 @@
 
     let text = esc(raw);
 
-    // 1. Highlight Phone Numbers (Hotline e.g. 0798969040 or 0798 969 040)
+    // 1. Detect and strip membership link so we can render it as a luxury CTA button
+    let hasMembershipLink = false;
+    if (/https:\/\/rentzy\.vn\/member-ship\/?/i.test(text)) {
+      hasMembershipLink = true;
+      // Strip any preceding sentence referencing the link or the link itself
+      text = text.replace(
+        /(?:(?:[-•*]\s*)?(?:Nàng|Bạn|Khách hàng)?\s*[^.\n]*?(?:tham khảo|đăng ký|quyền lợi|xem thêm|tại đây)[^:\n]*?:\s*)?(?:\[[^\]]*\]\()?https:\/\/rentzy\.vn\/member-ship\/?\)?/gi,
+        ""
+      );
+    }
+
+    // 2. Highlight Phone Numbers (Hotline e.g. 0798969040 or 0798 969 040)
     text = text.replace(
       /(?<!\w)(0[2-9]\d{8,9}|0[2-9]\d{1,2}[\s.-]\d{3}[\s.-]\d{3,4}|1[89]00[\s.-]?\d{4,6})(?!\w)/g,
       (match) => {
@@ -337,21 +462,23 @@
       }
     );
 
-    // 2. Highlight Showroom Address (e.g. 51 đường số 41, phường Khánh Hội, TP. Hồ Chí Minh)
+    // 3. Highlight Showroom Address -> Click to open Google Maps
     text = text.replace(
       /(51\s+đường\s+số\s+41[^,\n<]*,\s*(?:phường|p\.)\s*Khánh\s*Hội[^,\n<]*,\s*(?:TP\.\s*Hồ\s*Chí\s*Minh|TPHCM|TP\s+Hồ\s+Chí\s+Minh|Quận\s*4)[^.\n<]*)/gi,
       (match) => {
-        return `<span class="rw-address-badge" title="Địa chỉ Showroom Rentzy"><svg class="rw-hl-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg><span>${match}</span></span>`;
+        const cleanAddr = match.replace(/[\n\r]+/g, " ").trim();
+        const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}`;
+        return `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="rw-address-badge" title="Nhấn để mở chỉ đường trên Google Maps"><span class="rw-addr-main"><svg class="rw-hl-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg><span class="rw-addr-text">${match}</span></span><span class="rw-addr-hint">Chỉ đường Google Maps ↗</span></a>`;
       }
     );
 
-    // 3. Markdown link [Text](URL)
+    // 4. Markdown link [Text](URL)
     text = text.replace(
       /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g,
       '<a href="$2" target="_blank" rel="noopener noreferrer" class="rw-link">$1</a>'
     );
 
-    // 4. Standalone URL (e.g. https://rentzy.vn/member-ship/)
+    // 5. Standalone URL
     text = text.replace(
       /(^|[\s\(\[\{])(https?:\/\/[^\s<>\)\]\}]+)/g,
       '$1<a href="$2" target="_blank" rel="noopener noreferrer" class="rw-link">$2</a>'
@@ -377,6 +504,24 @@
     joined = joined.replace(/\n\s*\n/g, '<div class="rw-para-gap"></div>');
     joined = joined.replace(/\n/g, "<br>");
     joined = joined.replace(/^(<br>|<div class="rw-para-gap"><\/div>)+/, "");
+    joined = joined.replace(/(<br>|<div class="rw-para-gap"><\/div>)+$/, "");
+
+    // 6. Append luxury Membership CTA Button if message relates to membership
+    if (hasMembershipLink) {
+      joined += `
+        <div class="rw-membership-card">
+          <a href="https://rentzy.vn/member-ship/" target="_blank" rel="noopener noreferrer" class="rw-membership-btn" title="Nhấn để xem chi tiết và đăng ký gói thành viên Rentzy">
+            <span class="rw-mbtn-left">
+              <span class="rw-mbtn-icon">👑</span>
+              <span class="rw-mbtn-text">Xem chi tiết &amp; Đăng ký Gói thành viên</span>
+            </span>
+            <svg class="rw-mbtn-arrow" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+      `;
+    }
 
     return joined;
   }

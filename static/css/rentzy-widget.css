@@ -911,24 +911,137 @@
 }
 
 .rw-address-badge {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
-  padding: 2.5px 8.5px;
-  margin: 2px 0;
-  border-radius: 6px;
-  background: var(--rw-gold-light);
-  color: #5c4415;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 11px;
+  margin: 4px 0 2px 0;
+  border-radius: 9px;
+  background: #fdfbf7;
+  color: #4a3610;
   border: 1px solid rgba(197, 160, 89, 0.45);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 12px;
-  line-height: 1.45;
-  vertical-align: baseline;
-  box-shadow: 0 1px 3px rgba(197, 160, 89, 0.12);
+  line-height: 1.4;
+  text-decoration: none;
+  box-shadow: 0 1.5px 5px rgba(197, 160, 89, 0.1);
+  transition: all 0.18s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.rw-address-badge .rw-hl-icon {
-  color: var(--rw-gold-dark);
+.rw-address-badge:hover {
+  background: #fcf6eb;
+  border-color: #c5a059;
+  color: #382705;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 9px rgba(197, 160, 89, 0.22);
+}
+
+.rw-addr-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.rw-addr-main .rw-hl-icon {
+  color: #c5a059;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.rw-addr-text {
+  font-weight: 600;
+  color: #2b2620;
+}
+
+.rw-addr-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #b3862b;
+  margin-left: 19px;
+  letter-spacing: 0.2px;
+  transition: color 0.15s ease;
+}
+
+.rw-address-badge:hover .rw-addr-hint {
+  color: #e05263;
+}
+
+/* ============================================================
+   MEMBERSHIP CTA BUTTON
+   ============================================================ */
+
+.rw-membership-card {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(232, 228, 220, 0.9);
+  width: 100%;
+}
+
+.rw-membership-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 13px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #1f1d1a 0%, #2f2a24 100%);
+  color: #f7e6c4;
+  border: 1px solid #c5a059;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.rw-membership-btn:hover {
+  background: linear-gradient(135deg, #2b2722 0%, #3d362e 100%);
+  color: #ffffff;
+  border-color: #dfba73;
+  transform: translateY(-1.5px);
+  box-shadow: 0 5px 14px rgba(197, 160, 89, 0.28);
+}
+
+.rw-mbtn-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.rw-mbtn-icon {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.rw-mbtn-text {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rw-mbtn-arrow {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: #c5a059;
+  transition: transform 0.18s ease;
+}
+
+.rw-membership-btn:hover .rw-mbtn-arrow {
+  transform: translateX(3px);
+  color: #ffffff;
 }
 
 .rw-bullet {

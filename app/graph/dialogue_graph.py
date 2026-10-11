@@ -97,8 +97,7 @@ def retrieve_knowledge_node(state: AgentState) -> Dict[str, Any]:
     membership_instruction = ""
     if state["intent"] == IntentEnum.MEMBERSHIP.value:
         membership_instruction = """
-- QUY TẮC BẮT BUỘC VỀ MEMBERSHIP: Vì khách hàng đang hỏi về Gói thành viên (Membership), ở cuối câu trả lời, bạn BẮT BUỘC phải đề cập và hướng dẫn khách hàng truy cập đường link chính thức sau để tham khảo chi tiết bảng quyền lợi và đăng ký: https://rentzy.vn/member-ship/
-(Ví dụ: 'Nàng có thể tham khảo chi tiết quyền lợi và đăng ký gói tại đây nhé: https://rentzy.vn/member-ship/')."""
+- QUY TẮC BẮT BUỘC VỀ MEMBERSHIP: Vì khách hàng đang hỏi về Gói thành viên (Membership), ở cuối câu trả lời, bạn BẮT BUỘC phải đính kèm đường link chính thức sau để hệ thống tự động hiển thị nút bấm chuyển tiếp sang trang đăng ký gói cho khách hàng: https://rentzy.vn/member-ship/"""
 
     prompt = f"""Bạn là Trợ lý AI AskMe của thương hiệu thời trang Rentzy.
 Dựa vào ngữ cảnh thông tin chính thức dưới đây từ hệ thống Rentzy, hãy trả lời câu hỏi của khách hàng một cách lịch sự, tự nhiên, thân thiện (xưng 'Rentzy' hoặc 'mình', gọi khách là 'Nàng' hoặc 'khách hàng').
@@ -126,9 +125,9 @@ Dựa vào ngữ cảnh thông tin chính thức dưới đây từ hệ thống
         logger.error(f"Lỗi tổng hợp câu trả lời ({e})")
         reply = context_texts[0] if context_texts else "Rentzy xin chào Nàng! Nàng cần hỗ trợ thông tin gì ạ?"
 
-    # Đảm bảo 100% luôn có link https://rentzy.vn/member-ship/ khi hỏi về membership
+    # Đảm bảo 100% luôn có link https://rentzy.vn/member-ship/ khi hỏi về membership để widget tự động tạo nút bấm
     if state["intent"] == IntentEnum.MEMBERSHIP.value and "https://rentzy.vn/member-ship/" not in reply:
-        reply += "\n\nNàng có thể tham khảo chi tiết bảng quyền lợi và đăng ký gói tại đây nhé: https://rentzy.vn/member-ship/"
+        reply += "\n\nhttps://rentzy.vn/member-ship/"
 
     return {
         "reply_message": reply,
