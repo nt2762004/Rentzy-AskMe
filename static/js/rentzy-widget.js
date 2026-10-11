@@ -39,7 +39,7 @@
       if (url.origin && url.origin !== "null") {
         assetBaseUrl = url.origin;
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // Base URL for API requests
@@ -403,7 +403,7 @@
     { label: "✈️ Du lịch", query: "Tôi đang tìm trang phục du lịch" },
     { label: "💼 Công sở", query: "Tôi đang tìm trang phục công sở" },
     { label: "🌸 Áo dài", query: "Tôi đang tìm áo dài" },
-    { label: "💡 Chưa biết, cần tư vấn", query: "Tôi chưa biết chọn trang phục nào, cần tư vấn" }
+    { label: "💡 Cần tư vấn", query: "Tôi chưa biết chọn trang phục nào, cần tư vấn" }
   ];
 
   let isMoreExpanded = false;
@@ -463,12 +463,11 @@
     );
 
     // 3. Highlight Showroom Address -> Click to open Google Maps
+    const RENTZY_SHOWROOM_MAP_URL = "https://maps.app.goo.gl/ShHNabftWGUSmy6N6";
     text = text.replace(
-      /(51\s+đường\s+số\s+41[^,\n<]*,\s*(?:phường|p\.)\s*Khánh\s*Hội[^,\n<]*,\s*(?:TP\.\s*Hồ\s*Chí\s*Minh|TPHCM|TP\s+Hồ\s+Chí\s+Minh|Quận\s*4)[^.\n<]*)/gi,
+      /(51\s+(?:đường\s+số|đ\.\s*số|đường)?\s*41[^,\n<]*,\s*(?:phường|p\.)\s*Khánh\s*Hội[^,\n<]*,\s*(?:TP\.\s*Hồ\s*Chí\s*Minh|TPHCM|TP\s+Hồ\s+Chí\s+Minh|Quận\s*4)[^.\n<]*)/gi,
       (match) => {
-        const cleanAddr = match.replace(/[\n\r]+/g, " ").trim();
-        const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}`;
-        return `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="rw-address-badge" title="Nhấn để mở chỉ đường trên Google Maps"><span class="rw-addr-main"><svg class="rw-hl-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg><span class="rw-addr-text">${match}</span></span><span class="rw-addr-hint">Chỉ đường Google Maps ↗</span></a>`;
+        return `<a href="${RENTZY_SHOWROOM_MAP_URL}" target="_blank" rel="noopener noreferrer" class="rw-address-badge" title="Nhấn để mở chỉ đường trên Google Maps"><span class="rw-addr-main"><svg class="rw-hl-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg><span class="rw-addr-text">${match}</span></span><span class="rw-addr-hint">Chỉ đường Google Maps ↗</span></a>`;
       }
     );
 
@@ -1099,10 +1098,10 @@
       inner += `
         <div class="rw-quick-replies">
           ${data.suggested_options
-            .map((option) => {
-              const isUpcoming = /\((?:upcoming|sắp ra mắt)\)|\[(?:upcoming|sắp ra mắt)\]/i.test(option);
-              const cleanText = option.replace(/\s*[\(\[](?:upcoming|sắp ra mắt)[\)\]]\s*/gi, "").trim();
-              return `
+          .map((option) => {
+            const isUpcoming = /\((?:upcoming|sắp ra mắt)\)|\[(?:upcoming|sắp ra mắt)\]/i.test(option);
+            const cleanText = option.replace(/\s*[\(\[](?:upcoming|sắp ra mắt)[\)\]]\s*/gi, "").trim();
+            return `
                 <button
                   type="button"
                   class="rw-pill-btn ${isUpcoming ? "rw-pill-is-upcoming" : ""}"
@@ -1114,8 +1113,8 @@
                   ${isUpcoming ? `<span class="rw-pill-badge">Upcoming</span>` : ""}
                 </button>
               `;
-            })
-            .join("")}
+          })
+          .join("")}
         </div>
       `;
     }
