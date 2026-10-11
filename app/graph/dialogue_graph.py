@@ -191,9 +191,8 @@ def ask_clarification_node(state: AgentState) -> Dict[str, Any]:
         "Gói thành viên",
         "Chính sách đặt cọc (Upcoming)"
     ]
-    options_text = "\n".join([f"- {opt}" for opt in options])
 
-    reply = f"Dạ Rentzy nhận thấy câu hỏi của Nàng có thể liên quan đến nhiều nội dung. Nàng vui lòng chọn hoặc làm rõ giúp Rentzy nhu cầu cụ thể nhé:\n\n{options_text}"
+    reply = "Dạ Rentzy nhận thấy câu hỏi của Nàng có thể liên quan đến nhiều nội dung. Nàng chọn nhu cầu cụ thể bên dưới để Rentzy hỗ trợ ngay nhé:"
 
     return {
         "reply_message": reply,

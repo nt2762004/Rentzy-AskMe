@@ -63,7 +63,7 @@
      CSS INJECTION (LINK + INLINE CRITICAL FALLBACK)
      ============================================================ */
 
-  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=5.4`;
+  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=5.5`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -133,36 +133,62 @@
         background: rgba(224, 82, 99, 0.12) !important;
         color: #b82e42 !important;
       }
+      .rw-quick-replies {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        margin-top: 8px !important;
+        padding-top: 8px !important;
+        border-top: 1px dashed rgba(232, 228, 220, 0.9) !important;
+        width: 100% !important;
+      }
       .rw-pill-btn {
-        display: inline-flex !important;
+        display: flex !important;
         align-items: center !important;
-        gap: 5px !important;
-        padding: 4px 10px !important;
-        border: 1px solid rgba(197, 160, 89, 0.4) !important;
-        border-radius: 999px !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        padding: 7px 11px !important;
+        border: 1px solid rgba(197, 160, 89, 0.35) !important;
+        border-radius: 8px !important;
         background: #faf5eb !important;
         color: #8c6b2d !important;
-        font-size: 11px !important;
+        font-size: 11.5px !important;
         font-weight: 600 !important;
         line-height: 1.3 !important;
         cursor: pointer !important;
         font-family: inherit !important;
+        text-align: left !important;
+        box-sizing: border-box !important;
+        transition: all 0.16s ease !important;
+      }
+      .rw-pill-btn:hover {
+        background: #c5a059 !important;
+        color: #ffffff !important;
+        transform: translateX(2px) !important;
+        box-shadow: 0 2px 6px rgba(197, 160, 89, 0.25) !important;
       }
       .rw-pill-btn.rw-pill-is-upcoming {
         border-color: rgba(156, 149, 142, 0.35) !important;
         background: #f7f6f4 !important;
         color: #635d57 !important;
       }
+      .rw-pill-btn.rw-pill-is-upcoming:hover {
+        background: #ede9e3 !important;
+        border-color: #c5a059 !important;
+        color: #1a1817 !important;
+      }
       .rw-pill-badge {
         font-size: 8px !important;
         font-weight: 700 !important;
         text-transform: uppercase !important;
         letter-spacing: 0.3px !important;
-        padding: 1px 4.5px !important;
+        padding: 1.5px 4.5px !important;
         border-radius: 3px !important;
         background: rgba(156, 149, 142, 0.18) !important;
         color: #7d766f !important;
         line-height: 1.1 !important;
+        flex-shrink: 0 !important;
+        margin-left: 6px !important;
       }
     `;
     document.head.appendChild(styleEl);
