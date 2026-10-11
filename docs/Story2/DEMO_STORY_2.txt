@@ -149,7 +149,7 @@ Thực hiện: Mở POST /api/v1/chat trên Swagger UI, dán từng JSON vào Re
 
 - Request Body:
   {
-    "session_id": "test_low_conf",
+    "session_id": "test_fallback",
     "message": "Dịch thuật bài báo tiếng Anh này giúp tôi"
   }
 
@@ -171,14 +171,14 @@ Thực hiện: Mở POST /api/v1/chat trên Swagger UI, dán từng JSON vào Re
 
 - Lượt 1 (Gửi câu hỏi ngoài phạm vi lần 1):
   {
-    "session_id": "session_fallback_test",
+    "session_id": "session_fallback_count",
     "message": "Giá cổ phiếu hôm nay thế nào?"
   }
   Expected Response Lượt 1: "fallback_count": 1, "suggest_sales": false.
 
 - Lượt 2 (Dùng CÙNG session_id="session_fallback_test" gửi tiếp câu hỏi ngoài phạm vi lần 2):
   {
-    "session_id": "session_fallback_test",
+    "session_id": "session_fallback_count",
     "message": "Dự báo thời tiết Hà Nội hôm nay"
   }
   Expected Response Lượt 2 (HTTP 200 OK):
