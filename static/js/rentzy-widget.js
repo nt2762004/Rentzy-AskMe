@@ -63,7 +63,7 @@
      CSS INJECTION (LINK + INLINE CRITICAL FALLBACK)
      ============================================================ */
 
-  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.2`;
+  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.3`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -875,7 +875,7 @@
         <div class="rw-tooltip-shimmer" aria-hidden="true"></div>
         <div class="rw-tooltip-body" id="rw-tooltip-body">
           <span class="rw-tooltip-emoji" aria-hidden="true">😍</span>
-          <span class="rw-tooltip-text">Cần giúp chọn đồ không người đẹp?</span>
+          <span class="rw-tooltip-text">Cần hỗ trợ không người đẹp?</span>
         </div>
         <button class="rw-tooltip-close" id="rw-tooltip-close" type="button" aria-label="Đóng thông báo">&times;</button>
       </div>
