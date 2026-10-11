@@ -145,7 +145,7 @@ def ask_clarification_node(state: AgentState) -> Dict[str, Any]:
         "Chính sách đặt cọc (Upcoming)"
     ]
 
-    reply = "Dạ Rentzy nhận thấy câu hỏi của Nàng có thể liên quan đến nhiều nội dung. Nàng chọn nhu cầu cụ thể bên dưới để Rentzy hỗ trợ ngay nhé:"
+    reply = "Dạ Rentzy nhận thấy câu hỏi của Nàng có thể liên quan đến nhiều nội dung. Nàng vui lòng chọn hoặc làm rõ nhu cầu cụ thể bên dưới để Rentzy hỗ trợ ngay nhé:"
 
     return {
         "reply_message": reply,
@@ -223,6 +223,7 @@ def out_of_scope_node(state: AgentState) -> Dict[str, Any]:
 ACTIVE_INTENTS = {
     IntentEnum.RENTZY_OVERVIEW.value,
     IntentEnum.MEMBERSHIP.value,
+    IntentEnum.CONTACT_SUPPORT.value,
 }
 
 def upcoming_feature_node(state: AgentState) -> Dict[str, Any]:

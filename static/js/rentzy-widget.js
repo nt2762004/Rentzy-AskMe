@@ -63,7 +63,7 @@
      CSS INJECTION (LINK + INLINE CRITICAL FALLBACK)
      ============================================================ */
 
-  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.3`;
+  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.4`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -601,7 +601,7 @@
       emoji: "📞",
       title: "Liên hệ Rentzy",
       query: "Tôi cần liên hệ chuyên viên tư vấn hoặc hotline Rentzy",
-      status: "upcoming"
+      status: "active"
     },
     {
       emoji: "ℹ️",
