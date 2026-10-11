@@ -27,31 +27,43 @@
      API ORIGIN
      ============================================================ */
 
-  let apiBaseUrl = window.RENTZY_API_URL || window.location.origin;
-
   const scriptTag =
     document.currentScript ||
     document.querySelector('script[src*="rentzy-widget.js"]');
 
-  if (scriptTag) {
+  // Base URL for static assets (CSS, etc.) always follows where widget JS is hosted
+  let assetBaseUrl = window.location.origin;
+  if (scriptTag && scriptTag.src) {
+    try {
+      const url = new URL(scriptTag.src, window.location.href);
+      if (url.origin && url.origin !== "null") {
+        assetBaseUrl = url.origin;
+      }
+    } catch (_) {}
+  }
+
+  // Base URL for API requests
+  let apiBaseUrl = window.RENTZY_API_URL || "";
+  if (!apiBaseUrl && scriptTag) {
     const customApi = scriptTag.getAttribute("data-api-url");
     if (customApi) {
-      apiBaseUrl = customApi.replace(/\/+$/, "");
-    } else if (scriptTag.src) {
-      try {
-        const url = new URL(scriptTag.src, window.location.href);
-        if (url.origin && url.origin !== "null") {
-          apiBaseUrl = url.origin;
-        }
-      } catch (_) {}
+      const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+      if (isLocalHost && customApi.includes("onrender.com")) {
+        apiBaseUrl = window.location.origin;
+      } else {
+        apiBaseUrl = customApi.replace(/\/+$/, "");
+      }
     }
+  }
+  if (!apiBaseUrl) {
+    apiBaseUrl = assetBaseUrl || window.location.origin;
   }
 
   /* ============================================================
-     CSS INJECTION
+     CSS INJECTION (LINK + INLINE CRITICAL FALLBACK)
      ============================================================ */
 
-  const cssHref = `${apiBaseUrl}/static/css/rentzy-widget.css?v=5.3`;
+  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=5.4`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -59,6 +71,101 @@
     link.href = cssHref;
     link.dataset.rentzyWidgetCss = "true";
     document.head.appendChild(link);
+  }
+
+  if (!document.getElementById("rw-critical-styles")) {
+    const styleEl = document.createElement("style");
+    styleEl.id = "rw-critical-styles";
+    styleEl.textContent = `
+      .rw-welcome-options {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 6px !important;
+        margin-top: 10px !important;
+        padding-top: 10px !important;
+        border-top: 1px dashed rgba(232, 228, 220, 0.9) !important;
+      }
+      .rw-welcome-chip {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 7px 9px !important;
+        background: #ffffff !important;
+        border: 1px solid rgba(197, 160, 89, 0.35) !important;
+        border-radius: 9px !important;
+        cursor: pointer !important;
+        text-align: left !important;
+        transition: all 0.18s ease !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+        min-height: 34px !important;
+        box-sizing: border-box !important;
+        font-family: inherit !important;
+      }
+      .rw-welcome-chip:hover {
+        background: #fff0f2 !important;
+        border-color: #e05263 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 3px 8px rgba(224, 82, 99, 0.12) !important;
+      }
+      .rw-wchip-label {
+        font-size: 11.5px !important;
+        font-weight: 600 !important;
+        color: #1a1817 !important;
+        line-height: 1.25 !important;
+      }
+      .rw-welcome-chip:hover .rw-wchip-label {
+        color: #b82e42 !important;
+      }
+      .rw-wchip-badge {
+        font-size: 8px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.3px !important;
+        padding: 1.5px 4.5px !important;
+        border-radius: 4px !important;
+        background: rgba(156, 149, 142, 0.15) !important;
+        color: #7d756d !important;
+        flex-shrink: 0 !important;
+        margin-left: 4px !important;
+        line-height: 1.1 !important;
+      }
+      .rw-welcome-chip:hover .rw-wchip-badge {
+        background: rgba(224, 82, 99, 0.12) !important;
+        color: #b82e42 !important;
+      }
+      .rw-pill-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        padding: 4px 10px !important;
+        border: 1px solid rgba(197, 160, 89, 0.4) !important;
+        border-radius: 999px !important;
+        background: #faf5eb !important;
+        color: #8c6b2d !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        line-height: 1.3 !important;
+        cursor: pointer !important;
+        font-family: inherit !important;
+      }
+      .rw-pill-btn.rw-pill-is-upcoming {
+        border-color: rgba(156, 149, 142, 0.35) !important;
+        background: #f7f6f4 !important;
+        color: #635d57 !important;
+      }
+      .rw-pill-badge {
+        font-size: 8px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.3px !important;
+        padding: 1px 4.5px !important;
+        border-radius: 3px !important;
+        background: rgba(156, 149, 142, 0.18) !important;
+        color: #7d766f !important;
+        line-height: 1.1 !important;
+      }
+    `;
+    document.head.appendChild(styleEl);
   }
 
   /* ============================================================
