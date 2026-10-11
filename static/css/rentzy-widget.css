@@ -883,33 +883,12 @@
   top: 1px;
 }
 
-.rw-phone-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4.5px;
-  padding: 1.5px 7.5px;
-  margin: 1px 2px;
-  border-radius: 6px;
-  background: var(--rw-rose-light);
-  color: var(--rw-rose-dark);
-  border: 1px solid rgba(224, 82, 99, 0.32);
-  font-weight: 700;
-  font-size: 12px;
-  text-decoration: none;
-  white-space: nowrap;
-  vertical-align: baseline;
-  box-shadow: 0 1px 3px rgba(224, 82, 99, 0.08);
-  transition: all 0.16s ease;
-}
+/* ============================================================
+   CONTACT BADGES (Hotline & Showroom Address)
+   ============================================================ */
 
-.rw-phone-badge:hover {
-  background: #ffdce1;
-  border-color: var(--rw-rose);
-  color: #9c1f32;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(224, 82, 99, 0.2);
-}
-
+.rw-contact-badge,
+.rw-phone-badge,
 .rw-address-badge {
   display: flex;
   flex-direction: column;
@@ -930,6 +909,8 @@
   box-sizing: border-box;
 }
 
+.rw-contact-badge:hover,
+.rw-phone-badge:hover,
 .rw-address-badge:hover {
   background: #fcf6eb;
   border-color: #c5a059;
@@ -938,37 +919,63 @@
   box-shadow: 0 3px 9px rgba(197, 160, 89, 0.22);
 }
 
+.rw-contact-main,
 .rw-addr-main {
   display: flex;
   align-items: flex-start;
   gap: 6px;
 }
 
+.rw-contact-main .rw-hl-icon,
 .rw-addr-main .rw-hl-icon {
-  color: #c5a059;
   width: 13px;
   height: 13px;
   flex-shrink: 0;
   margin-top: 2px;
 }
 
+.rw-phone-badge .rw-hl-icon {
+  color: #e05263;
+}
+
+.rw-address-badge .rw-hl-icon {
+  color: #c5a059;
+}
+
+.rw-contact-text,
 .rw-addr-text {
   font-weight: 600;
   color: #2b2620;
 }
 
+.rw-contact-hint,
 .rw-addr-hint {
   display: inline-flex;
   align-items: center;
   gap: 3px;
   font-size: 10.5px;
   font-weight: 600;
-  color: #b3862b;
   margin-left: 19px;
   letter-spacing: 0.2px;
   transition: color 0.15s ease;
 }
 
+.rw-phone-badge .rw-contact-hint,
+.rw-phone-badge .rw-addr-hint {
+  color: #e05263;
+}
+
+.rw-address-badge .rw-contact-hint,
+.rw-address-badge .rw-addr-hint {
+  color: #b3862b;
+}
+
+.rw-phone-badge:hover .rw-contact-hint,
+.rw-phone-badge:hover .rw-addr-hint {
+  color: #b82e42;
+}
+
+.rw-address-badge:hover .rw-contact-hint,
 .rw-address-badge:hover .rw-addr-hint {
   color: #e05263;
 }

@@ -190,6 +190,8 @@
         flex-shrink: 0 !important;
         margin-left: 6px !important;
       }
+      .rw-contact-badge,
+      .rw-phone-badge,
       .rw-address-badge {
         display: flex !important;
         flex-direction: column !important;
@@ -208,6 +210,8 @@
         width: 100% !important;
         box-sizing: border-box !important;
       }
+      .rw-contact-badge:hover,
+      .rw-phone-badge:hover,
       .rw-address-badge:hover {
         background: #fcf6eb !important;
         border-color: #c5a059 !important;
@@ -215,33 +219,54 @@
         transform: translateY(-1px) !important;
         box-shadow: 0 3px 9px rgba(197, 160, 89, 0.22) !important;
       }
+      .rw-contact-main,
       .rw-addr-main {
         display: flex !important;
         align-items: flex-start !important;
         gap: 6px !important;
       }
+      .rw-contact-main .rw-hl-icon,
       .rw-addr-main .rw-hl-icon {
-        color: #c5a059 !important;
         width: 13px !important;
         height: 13px !important;
         flex-shrink: 0 !important;
         margin-top: 2px !important;
       }
+      .rw-phone-badge .rw-hl-icon {
+        color: #e05263 !important;
+      }
+      .rw-address-badge .rw-hl-icon {
+        color: #c5a059 !important;
+      }
+      .rw-contact-text,
       .rw-addr-text {
         font-weight: 600 !important;
         color: #2b2620 !important;
       }
+      .rw-contact-hint,
       .rw-addr-hint {
         display: inline-flex !important;
         align-items: center !important;
         gap: 3px !important;
         font-size: 10.5px !important;
         font-weight: 600 !important;
-        color: #b3862b !important;
         margin-left: 19px !important;
         letter-spacing: 0.2px !important;
         transition: color 0.15s ease !important;
       }
+      .rw-phone-badge .rw-contact-hint,
+      .rw-phone-badge .rw-addr-hint {
+        color: #e05263 !important;
+      }
+      .rw-address-badge .rw-contact-hint,
+      .rw-address-badge .rw-addr-hint {
+        color: #b3862b !important;
+      }
+      .rw-phone-badge:hover .rw-contact-hint,
+      .rw-phone-badge:hover .rw-addr-hint {
+        color: #b82e42 !important;
+      }
+      .rw-address-badge:hover .rw-contact-hint,
       .rw-address-badge:hover .rw-addr-hint {
         color: #e05263 !important;
       }
@@ -453,12 +478,12 @@
       );
     }
 
-    // 2. Highlight Phone Numbers (Hotline e.g. 0798969040 or 0798 969 040)
+    // 2. Highlight Phone Numbers -> Click to call hotline
     text = text.replace(
       /(?<!\w)(0[2-9]\d{8,9}|0[2-9]\d{1,2}[\s.-]\d{3}[\s.-]\d{3,4}|1[89]00[\s.-]?\d{4,6})(?!\w)/g,
       (match) => {
         const cleanDigits = match.replace(/[\s.-]/g, "");
-        return `<a href="tel:${cleanDigits}" class="rw-phone-badge" title="Nhấn để gọi hotline"><svg class="rw-hl-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57.1.34.02.72-.25 1.02l-2.2 2.2z"/></svg><span>${match}</span></a>`;
+        return `<a href="tel:${cleanDigits}" class="rw-contact-badge rw-phone-badge" title="Nhấn để gọi hotline Rentzy"><span class="rw-contact-main rw-addr-main"><svg class="rw-hl-icon rw-phone-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57.1.34.02.72-.25 1.02l-2.2 2.2z"/></svg><span class="rw-contact-text rw-addr-text">${match}</span></span><span class="rw-contact-hint rw-addr-hint">Gọi hotline ngay ↗</span></a>`;
       }
     );
 
@@ -467,7 +492,7 @@
     text = text.replace(
       /(51\s+(?:đường\s+số|đ\.\s*số|đường)?\s*41[^,\n<]*,\s*(?:phường|p\.)\s*Khánh\s*Hội[^,\n<]*,\s*(?:TP\.\s*Hồ\s*Chí\s*Minh|TPHCM|TP\s+Hồ\s+Chí\s+Minh|Quận\s*4)[^.\n<]*)/gi,
       (match) => {
-        return `<a href="${RENTZY_SHOWROOM_MAP_URL}" target="_blank" rel="noopener noreferrer" class="rw-address-badge" title="Nhấn để mở chỉ đường trên Google Maps"><span class="rw-addr-main"><svg class="rw-hl-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg><span class="rw-addr-text">${match}</span></span><span class="rw-addr-hint">Chỉ đường Google Maps ↗</span></a>`;
+        return `<a href="${RENTZY_SHOWROOM_MAP_URL}" target="_blank" rel="noopener noreferrer" class="rw-contact-badge rw-address-badge" title="Nhấn để mở chỉ đường trên Google Maps"><span class="rw-contact-main rw-addr-main"><svg class="rw-hl-icon rw-addr-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg><span class="rw-contact-text rw-addr-text">${match}</span></span><span class="rw-contact-hint rw-addr-hint">Chỉ đường Google Maps ↗</span></a>`;
       }
     );
 
