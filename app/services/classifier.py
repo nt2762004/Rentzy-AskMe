@@ -31,7 +31,7 @@ class IntentClassifierService:
         normalized_msg = message.strip().lower()
         
         # Check liên hệ Sales trực tiếp
-        if any(kw in normalized_msg for kw in ["gặp nhân viên", "nói chuyện người thật", "gặp tư vấn", "gọi hotline", "cho xin số cskh"]):
+        if any(kw in normalized_msg for kw in ["gặp nhân viên", "nói chuyện người thật", "gặp tư vấn", "gọi hotline", "cho xin số cskh", "nhân viên tư vấn", "tư vấn viên", "chuyên viên tư vấn"]):
             return IntentClassificationResult(
                 intent=IntentEnum.CONTACT_SUPPORT.value,
                 confidence=0.98,
@@ -106,7 +106,7 @@ BẮT BUỘC TRẢ VỀ DẠNG JSON SCHEMA CHÍNH XÁC:
                     )
 
             return IntentClassificationResult(
-                intent=IntentEnum.OUT_OF_SCOPE.value,
+                intent=IntentEnum.FALLBACK.value,
                 confidence=0.50,
                 reasoning="Fallback default out of scope"
             )
