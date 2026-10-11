@@ -51,7 +51,7 @@
      CSS INJECTION
      ============================================================ */
 
-  const cssHref = `${apiBaseUrl}/static/css/rentzy-widget.css?v=5.2`;
+  const cssHref = `${apiBaseUrl}/static/css/rentzy-widget.css?v=5.3`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -148,6 +148,15 @@
       query: "Các gói Membership thành viên tại Rentzy gồm những gì?",
       status: "active"
     }
+  ];
+
+  const WELCOME_OCCASIONS = [
+    { label: "🥂 Đi tiệc", query: "Tôi đang tìm trang phục đi tiệc" },
+    { label: "📸 Chụp ảnh", query: "Tôi đang tìm trang phục chụp ảnh" },
+    { label: "✈️ Du lịch", query: "Tôi đang tìm trang phục du lịch" },
+    { label: "💼 Công sở", query: "Tôi đang tìm trang phục công sở" },
+    { label: "🌸 Áo dài", query: "Tôi đang tìm áo dài" },
+    { label: "💡 Chưa biết, cần tư vấn", query: "Tôi chưa biết chọn trang phục nào, cần tư vấn" }
   ];
 
   let isMoreExpanded = false;
@@ -317,15 +326,31 @@
      ============================================================ */
 
   function buildWelcomeHTML() {
+    const occasionsHtml = WELCOME_OCCASIONS.map(
+      (item) => `
+        <button
+          type="button"
+          class="rw-welcome-chip"
+          data-query="${esc(item.query)}"
+          title="${esc(item.label)} (Upcoming)"
+        >
+          <span class="rw-wchip-label">${esc(item.label)}</span>
+          <span class="rw-wchip-badge">Upcoming</span>
+        </button>
+      `
+    ).join("");
+
     return `
       <div class="rw-welcome-area" id="rw-welcome-card" aria-label="Lời chào Rentzy">
         <div class="rw-msg rw-msg-bot">
           <div class="rw-bot-icon" aria-hidden="true">R</div>
           <div class="rw-msg-content">
             <div class="rw-msg-bubble">
-              <div class="rw-welcome-title">Xin chào Nàng!</div>
               <div class="rw-welcome-text">
-                Mình là Trợ lý thời trang AI của Rentzy. Hiện tại mình đang mở thử nghiệm 2 tính năng: <strong>Giới thiệu Rentzy</strong> &amp; <strong>Gói thành viên</strong>. Nàng chọn chủ đề bên trên hoặc gõ câu hỏi để mình hỗ trợ nhé!
+                Chào Nàng, hôm nay Nàng đang tìm trang phục cho dịp nào ạ?
+              </div>
+              <div class="rw-welcome-options">
+                ${occasionsHtml}
               </div>
             </div>
             <span class="rw-msg-time">${now()}</span>
@@ -505,6 +530,11 @@
       starterMenu.addEventListener("click", handleStarterClick);
     }
 
+    const messages = document.getElementById("rw-messages");
+    if (messages) {
+      messages.addEventListener("click", handleMessagesClick);
+    }
+
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && isOpen) {
         closeChat();
@@ -560,6 +590,26 @@
     const query = button.dataset.query;
     if (query) {
       sendMessage(query);
+    }
+  }
+
+  function handleMessagesClick(event) {
+    const welcomeChip = event.target.closest(".rw-welcome-chip");
+    if (welcomeChip && !isSending) {
+      const query = welcomeChip.dataset.query;
+      if (query) {
+        sendMessage(query);
+      }
+      return;
+    }
+
+    const pillBtn = event.target.closest(".rw-pill-btn");
+    if (pillBtn && !isSending) {
+      const opt = pillBtn.dataset.opt || pillBtn.dataset.raw;
+      if (opt) {
+        sendMessage(opt);
+      }
+      return;
     }
   }
 
@@ -764,25 +814,32 @@
     `;
 
     if (
-      data.need_clarification &&
       Array.isArray(data.suggested_options) &&
-      data.suggested_options.length
+      data.suggested_options.length > 0
     ) {
       inner += `
         <div class="rw-quick-replies">
           ${data.suggested_options
-            .map(
-              (option) => `
-                <button type="button" class="rw-pill-btn" data-opt="${esc(option)}">
-                  ${esc(option)}
+            .map((option) => {
+              const isUpcoming = /\((?:upcoming|sắp ra mắt)\)|\[(?:upcoming|sắp ra mắt)\]/i.test(option);
+              const cleanText = option.replace(/\s*[\(\[](?:upcoming|sắp ra mắt)[\)\]]\s*/gi, "").trim();
+              return `
+                <button
+                  type="button"
+                  class="rw-pill-btn ${isUpcoming ? "rw-pill-is-upcoming" : ""}"
+                  data-opt="${esc(cleanText)}"
+                  data-raw="${esc(option)}"
+                  title="${isUpcoming ? "Tính năng sắp ra mắt (Upcoming)" : esc(cleanText)}"
+                >
+                  <span class="rw-pill-text">${esc(cleanText)}</span>
+                  ${isUpcoming ? `<span class="rw-pill-badge">Upcoming</span>` : ""}
                 </button>
-              `
-            )
+              `;
+            })
             .join("")}
         </div>
       `;
     }
-
 
     if (data.suggest_sales) {
       inner += `
@@ -811,7 +868,7 @@
     element.querySelectorAll(".rw-pill-btn").forEach((button) => {
       button.addEventListener("click", () => {
         if (!isSending) {
-          sendMessage(button.dataset.opt);
+          sendMessage(button.dataset.opt || button.dataset.raw);
         }
       });
     });
