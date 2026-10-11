@@ -63,7 +63,7 @@
      CSS INJECTION (LINK + INLINE CRITICAL FALLBACK)
      ============================================================ */
 
-  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.1`;
+  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.2`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -132,7 +132,7 @@
         font-weight: 600 !important;
         white-space: nowrap !important;
         opacity: 0 !important;
-        transform: translateY(8px) scale(0.94) !important;
+        transform: translateY(8px) scale(0.94);
         pointer-events: none !important;
         cursor: pointer !important;
         transition: opacity 220ms var(--rw-ease), transform 220ms var(--rw-ease) !important;
@@ -153,24 +153,33 @@
       .rw-launcher-tooltip.rw-show {
         opacity: 1 !important;
         pointer-events: auto !important;
-        animation: rw-tooltip-invite 3.4s ease-in-out infinite !important;
+        animation: rw-tooltip-invite 2.8s ease-in-out infinite !important;
       }
       @keyframes rw-tooltip-invite {
         0%, 100% {
-          transform: translateY(0) scale(1) rotate(0deg);
-          box-shadow: 0 8px 24px rgba(26, 24, 23, 0.22), 0 0 12px rgba(197, 160, 89, 0.2);
+          transform: translateY(0) scale(1);
+          box-shadow: 0 8px 24px rgba(26, 24, 23, 0.28), 0 0 12px rgba(197, 160, 89, 0.25);
+          border-color: rgba(197, 160, 89, 0.5);
         }
-        28% {
-          transform: translateY(-7px) scale(1.03) rotate(-1deg);
-          box-shadow: 0 14px 30px rgba(26, 24, 23, 0.28), 0 0 18px rgba(224, 82, 99, 0.35);
+        25% {
+          transform: translateY(-9px) scale(1.05);
+          box-shadow: 0 16px 36px rgba(26, 24, 23, 0.38), 0 0 22px rgba(224, 82, 99, 0.5);
+          border-color: #e05263;
         }
         50% {
-          transform: translateY(-4px) scale(1.015) rotate(1deg);
-          box-shadow: 0 12px 26px rgba(26, 24, 23, 0.25), 0 0 15px rgba(197, 160, 89, 0.3);
+          transform: translateY(-3px) scale(1.02);
+          box-shadow: 0 10px 26px rgba(26, 24, 23, 0.3), 0 0 14px rgba(197, 160, 89, 0.35);
+          border-color: #dfba73;
         }
-        72% {
-          transform: translateY(-1px) scale(1.005) rotate(0deg);
+        70% {
+          transform: translateY(-7px) scale(1.04);
+          box-shadow: 0 14px 32px rgba(26, 24, 23, 0.34), 0 0 18px rgba(224, 82, 99, 0.42);
+          border-color: #e05263;
         }
+      }
+      .rw-launcher-tooltip:hover {
+        animation-play-state: paused !important;
+        border-color: #c5a059 !important;
       }
       .rw-tooltip-shimmer {
         position: absolute !important;
@@ -207,21 +216,28 @@
         z-index: 1 !important;
       }
       .rw-tooltip-emoji {
-        font-size: 15px !important;
+        font-size: 16px !important;
         line-height: 1 !important;
         display: inline-block !important;
-        transform-origin: 70% 70% !important;
-        animation: rw-hand-wave 2.2s infinite ease-in-out !important;
+        transform-origin: center center !important;
+        animation: rw-heart-pulse 2.2s infinite ease-in-out !important;
       }
-      @keyframes rw-hand-wave {
-        0%   { transform: rotate(0deg); }
-        10%  { transform: rotate(16deg) scale(1.15); }
-        20%  { transform: rotate(-10deg) scale(1.15); }
-        30%  { transform: rotate(14deg) scale(1.15); }
-        40%  { transform: rotate(-6deg) scale(1.1); }
-        50%  { transform: rotate(10deg) scale(1.05); }
-        60%  { transform: rotate(0deg) scale(1); }
-        100% { transform: rotate(0deg) scale(1); }
+      @keyframes rw-heart-pulse {
+        0%, 100% {
+          transform: scale(1);
+        }
+        14% {
+          transform: scale(1.35) rotate(-6deg);
+        }
+        28% {
+          transform: scale(1.08) rotate(4deg);
+        }
+        42% {
+          transform: scale(1.28) rotate(-2deg);
+        }
+        58% {
+          transform: scale(1) rotate(0deg);
+        }
       }
       .rw-tooltip-text {
         font-size: 12px !important;
@@ -858,7 +874,7 @@
       <div class="rw-launcher-tooltip" id="rw-tooltip" role="status" title="Nhấn để trò chuyện cùng Trợ lý thời trang AI">
         <div class="rw-tooltip-shimmer" aria-hidden="true"></div>
         <div class="rw-tooltip-body" id="rw-tooltip-body">
-          <span class="rw-tooltip-emoji" aria-hidden="true">👋</span>
+          <span class="rw-tooltip-emoji" aria-hidden="true">😍</span>
           <span class="rw-tooltip-text">Cần giúp chọn đồ không người đẹp?</span>
         </div>
         <button class="rw-tooltip-close" id="rw-tooltip-close" type="button" aria-label="Đóng thông báo">&times;</button>

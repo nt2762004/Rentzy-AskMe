@@ -212,24 +212,29 @@
 .rw-launcher-tooltip.rw-show {
   opacity: 1;
   pointer-events: auto;
-  animation: rw-tooltip-invite 3.4s ease-in-out infinite;
+  animation: rw-tooltip-invite 2.8s ease-in-out infinite;
 }
 
 @keyframes rw-tooltip-invite {
   0%, 100% {
-    transform: translateY(0) scale(1) rotate(0deg);
-    box-shadow: 0 8px 24px rgba(26, 24, 23, 0.22), 0 0 12px rgba(197, 160, 89, 0.2);
+    transform: translateY(0) scale(1);
+    box-shadow: 0 8px 24px rgba(26, 24, 23, 0.28), 0 0 12px rgba(197, 160, 89, 0.25);
+    border-color: rgba(197, 160, 89, 0.5);
   }
-  28% {
-    transform: translateY(-7px) scale(1.03) rotate(-1deg);
-    box-shadow: 0 14px 30px rgba(26, 24, 23, 0.28), 0 0 18px rgba(224, 82, 99, 0.35);
+  25% {
+    transform: translateY(-9px) scale(1.05);
+    box-shadow: 0 16px 36px rgba(26, 24, 23, 0.38), 0 0 22px rgba(224, 82, 99, 0.5);
+    border-color: #e05263;
   }
   50% {
-    transform: translateY(-4px) scale(1.015) rotate(1deg);
-    box-shadow: 0 12px 26px rgba(26, 24, 23, 0.25), 0 0 15px rgba(197, 160, 89, 0.3);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 26px rgba(26, 24, 23, 0.3), 0 0 14px rgba(197, 160, 89, 0.35);
+    border-color: #dfba73;
   }
-  72% {
-    transform: translateY(-1px) scale(1.005) rotate(0deg);
+  70% {
+    transform: translateY(-7px) scale(1.04);
+    box-shadow: 0 14px 32px rgba(26, 24, 23, 0.34), 0 0 18px rgba(224, 82, 99, 0.42);
+    border-color: #e05263;
   }
 }
 
@@ -237,7 +242,6 @@
   border-color: #c5a059;
   background: linear-gradient(135deg, #2b2722 0%, #3a342c 100%);
   animation-play-state: paused;
-  transform: translateY(-3px) scale(1.02);
 }
 
 .rw-tooltip-shimmer {
@@ -279,22 +283,29 @@
 }
 
 .rw-tooltip-emoji {
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1;
   display: inline-block;
-  transform-origin: 70% 70%;
-  animation: rw-hand-wave 2.2s infinite ease-in-out;
+  transform-origin: center center;
+  animation: rw-heart-pulse 2.2s infinite ease-in-out;
 }
 
-@keyframes rw-hand-wave {
-  0%   { transform: rotate(0deg); }
-  10%  { transform: rotate(16deg) scale(1.15); }
-  20%  { transform: rotate(-10deg) scale(1.15); }
-  30%  { transform: rotate(14deg) scale(1.15); }
-  40%  { transform: rotate(-6deg) scale(1.1); }
-  50%  { transform: rotate(10deg) scale(1.05); }
-  60%  { transform: rotate(0deg) scale(1); }
-  100% { transform: rotate(0deg) scale(1); }
+@keyframes rw-heart-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.35) rotate(-6deg);
+  }
+  28% {
+    transform: scale(1.08) rotate(4deg);
+  }
+  42% {
+    transform: scale(1.28) rotate(-2deg);
+  }
+  58% {
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 .rw-tooltip-text {
