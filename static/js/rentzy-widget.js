@@ -51,7 +51,7 @@
      CSS INJECTION
      ============================================================ */
 
-  const cssHref = `${apiBaseUrl}/static/css/rentzy-widget.css?v=5.1`;
+  const cssHref = `${apiBaseUrl}/static/css/rentzy-widget.css?v=5.2`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -92,7 +92,50 @@
      QUICK ACTIONS MENU DATA
      ============================================================ */
 
-  const STARTER_MENU = [
+  /* ============================================================
+     QUICK ACTIONS MENU DATA (4 mục chính + mục "Xem thêm")
+     ============================================================ */
+
+  const PRIMARY_MENU = [
+    {
+      emoji: "👗",
+      title: "Tìm trang phục",
+      query: "Tôi muốn tìm trang phục phù hợp cho sự kiện",
+      status: "upcoming"
+    },
+    {
+      emoji: "🏷️",
+      title: "Xem giá và lịch thuê",
+      query: "Cho tôi xem bảng giá thuê và cách tính ngày thuê đồ",
+      status: "upcoming"
+    },
+    {
+      emoji: "📋",
+      title: "Chính sách thuê đồ",
+      query: "Chính sách đặt cọc và quy định thuê đồ như thế nào?",
+      status: "upcoming"
+    }
+  ];
+
+  const MORE_MENU = [
+    {
+      emoji: "🛍️",
+      title: "Sản phẩm thanh lý",
+      query: "Rentzy có bán các sản phẩm thanh lý không?",
+      status: "upcoming"
+    },
+    {
+      emoji: "📦",
+      title: "Theo dõi đơn hàng",
+      query: "Tôi muốn kiểm tra và theo dõi đơn hàng của tôi",
+      status: "upcoming"
+    },
+    {
+      emoji: "📞",
+      title: "Liên hệ Rentzy",
+      query: "Tôi cần liên hệ chuyên viên tư vấn hoặc hotline Rentzy",
+      status: "upcoming"
+    },
     {
       emoji: "ℹ️",
       title: "Giới thiệu Rentzy",
@@ -101,35 +144,13 @@
     },
     {
       emoji: "💎",
-      title: "Gói Membership",
+      title: "Gói thành viên",
       query: "Các gói Membership thành viên tại Rentzy gồm những gì?",
       status: "active"
-    },
-    {
-      emoji: "👗",
-      title: "Tìm mẫu đầm",
-      query: "Tôi muốn tìm mẫu đầm tiệc dạ hội sang trọng",
-      status: "upcoming"
-    },
-    {
-      emoji: "🏷️",
-      title: "Bảng giá thuê",
-      query: "Hướng dẫn cách thuê đồ và bảng giá dịch vụ tại Rentzy",
-      status: "upcoming"
-    },
-    {
-      emoji: "📋",
-      title: "Chính sách cọc",
-      query: "Chính sách tiền cọc và quy định trả đồ như thế nào?",
-      status: "upcoming"
-    },
-    {
-      emoji: "🧥",
-      title: "Hàng thanh lý",
-      query: "Rentzy có bán thanh lý các mẫu váy đầm không?",
-      status: "upcoming"
     }
   ];
+
+  let isMoreExpanded = false;
 
 
   /* ============================================================
@@ -219,37 +240,76 @@
   }
 
   /* ============================================================
-     STARTER MENU HTML BUILDER
+     STARTER MENU HTML BUILDER (4 mục chính + mục "Xem thêm")
      ============================================================ */
 
-  function buildStarterMenuHTML() {
-    return STARTER_MENU.map((item) => {
-      const isUpcoming = item.status === "upcoming";
-      const sublineHtml = isUpcoming
-        ? `<span class="rw-chip-subline rw-subline-upcoming">Upcoming</span>`
-        : `<span class="rw-chip-subline rw-subline-active">Sẵn sàng trải nghiệm</span>`;
+  function renderChipButton(item) {
+    const isUpcoming = item.status === "upcoming";
+    const sublineHtml = isUpcoming
+      ? `<span class="rw-chip-subline rw-subline-upcoming">Upcoming</span>`
+      : `<span class="rw-chip-subline rw-subline-active">Sẵn sàng trải nghiệm</span>`;
 
-      return `
-        <button
-          type="button"
-          class="rw-menu-chip ${isUpcoming ? "rw-chip-is-upcoming" : "rw-chip-is-active"}"
-          data-query="${esc(item.query)}"
-          data-title="${esc(item.title)}"
-          data-upcoming="${isUpcoming ? "true" : "false"}"
-        >
-          <div class="rw-chip-text-group">
-            <div class="rw-chip-title-line">
-              <span class="rw-chip-emoji">${item.emoji}</span>
-              <span class="rw-chip-label">${esc(item.title)}</span>
-            </div>
-            ${sublineHtml}
+    return `
+      <button
+        type="button"
+        class="rw-menu-chip ${isUpcoming ? "rw-chip-is-upcoming" : "rw-chip-is-active"}"
+        data-query="${esc(item.query)}"
+        data-title="${esc(item.title)}"
+        data-upcoming="${isUpcoming ? "true" : "false"}"
+      >
+        <div class="rw-chip-text-group">
+          <div class="rw-chip-title-line">
+            <span class="rw-chip-emoji">${item.emoji}</span>
+            <span class="rw-chip-label">${esc(item.title)}</span>
           </div>
-          <svg class="rw-chip-arrow" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
-          </svg>
-        </button>
-      `;
-    }).join("");
+          ${sublineHtml}
+        </div>
+        <svg class="rw-chip-arrow" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
+        </svg>
+      </button>
+    `;
+  }
+
+  function buildStarterMenuHTML() {
+    const primaryHtml = PRIMARY_MENU.map(renderChipButton).join("");
+    const moreChipsHtml = MORE_MENU.map(renderChipButton).join("");
+
+    const moreToggleHtml = `
+      <button
+        type="button"
+        class="rw-menu-chip rw-chip-toggle-more ${isMoreExpanded ? "rw-more-is-open" : ""}"
+        id="rw-btn-more-toggle"
+        aria-expanded="${isMoreExpanded ? "true" : "false"}"
+        title="${isMoreExpanded ? "Thu gọn danh mục" : "Xem thêm các chủ đề khác"}"
+      >
+        <div class="rw-chip-text-group">
+          <div class="rw-chip-title-line">
+            <span class="rw-chip-emoji">${isMoreExpanded ? "📂" : "➕"}</span>
+            <span class="rw-chip-label">${isMoreExpanded ? "Thu gọn" : "Xem thêm"}</span>
+          </div>
+          <span class="rw-chip-subline rw-subline-more">${isMoreExpanded ? "Đóng danh mục" : "5 chủ đề khác"}</span>
+        </div>
+        <svg class="rw-chip-arrow rw-more-arrow-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+        </svg>
+      </button>
+    `;
+
+    return `
+      <div class="rw-starter-primary-grid">
+        ${primaryHtml}
+        ${moreToggleHtml}
+      </div>
+      <div class="rw-more-menu-panel ${isMoreExpanded ? "rw-more-panel-open" : ""}" id="rw-more-panel" aria-hidden="${!isMoreExpanded}">
+        <div class="rw-more-panel-header">
+          <span class="rw-more-panel-title">Chủ đề khác (${MORE_MENU.length}):</span>
+        </div>
+        <div class="rw-more-grid">
+          ${moreChipsHtml}
+        </div>
+      </div>
+    `;
   }
 
   /* ============================================================
@@ -265,7 +325,7 @@
             <div class="rw-msg-bubble">
               <div class="rw-welcome-title">Xin chào Nàng!</div>
               <div class="rw-welcome-text">
-                Mình là trợ lý thời trang AI của Rentzy. Hiện tại mình đang mở thử nghiệm 2 tính năng: <strong>Giới thiệu Rentzy</strong> &amp; <strong>Gói Membership</strong>. Nàng chọn chủ đề bên trên hoặc gõ câu hỏi để mình hỗ trợ nhé!
+                Mình là Trợ lý thời trang AI của Rentzy. Hiện tại mình đang mở thử nghiệm 2 tính năng: <strong>Giới thiệu Rentzy</strong> &amp; <strong>Gói thành viên</strong>. Nàng chọn chủ đề bên trên hoặc gõ câu hỏi để mình hỗ trợ nhé!
               </div>
             </div>
             <span class="rw-msg-time">${now()}</span>
@@ -290,12 +350,12 @@
     root.innerHTML = `
       <!-- LAUNCHER TOOLTIP -->
       <div class="rw-launcher-tooltip" id="rw-tooltip" role="status">
-        <span>Rentzy AI Advisor</span>
+        <span>Trợ lý thời trang AI</span>
         <button class="rw-tooltip-close" id="rw-tooltip-close" type="button" aria-label="Đóng thông báo">&times;</button>
       </div>
 
       <!-- LAUNCHER FAB -->
-      <button class="rw-launcher-btn" id="rw-launcher" type="button" aria-label="Mở Rentzy AI Advisor" aria-expanded="false">
+      <button class="rw-launcher-btn" id="rw-launcher" type="button" aria-label="Mở Trợ lý thời trang AI" aria-expanded="false">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/>
         </svg>
@@ -308,7 +368,7 @@
         id="rw-window"
         role="dialog"
         aria-modal="false"
-        aria-label="Rentzy AI Advisor"
+        aria-label="Trợ lý thời trang AI"
         aria-hidden="true"
       >
         <!-- HEADER -->
@@ -319,8 +379,8 @@
               <span class="rw-online-dot" title="Đang trực tuyến" aria-label="Đang trực tuyến"></span>
             </div>
             <div class="rw-header-title">
-              <h4>Rentzy Advisor</h4>
-              <p>Trợ lý thời trang AI</p>
+              <h4>Trợ lý thời trang AI</h4>
+              <p>Trực tuyến</p>
             </div>
           </div>
           <div class="rw-header-actions">
@@ -477,7 +537,23 @@
     }
   }
 
+  function updateStarterMenuUI() {
+    const starterMenu = document.getElementById("rw-starter-menu");
+    if (starterMenu) {
+      starterMenu.innerHTML = buildStarterMenuHTML();
+    }
+  }
+
   function handleStarterClick(event) {
+    const moreToggleBtn = event.target.closest("#rw-btn-more-toggle");
+    if (moreToggleBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      isMoreExpanded = !isMoreExpanded;
+      updateStarterMenuUI();
+      return;
+    }
+
     const button = event.target.closest(".rw-menu-chip");
     if (!button || isSending) return;
 
@@ -578,8 +654,10 @@
   function resetChat() {
     if (isSending) return;
 
+    isMoreExpanded = false;
     quickMenuVisible = true;
     updateQuickMenuUI();
+    updateStarterMenuUI();
 
     const messages = document.getElementById("rw-messages");
     if (messages) {

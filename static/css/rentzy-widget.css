@@ -414,10 +414,13 @@
 
 .rw-quick-menu-body {
   padding: 8px 10px;
-  max-height: 180px;
+  max-height: 420px;
   opacity: 1;
-  transition: max-height 0.22s var(--rw-ease), opacity 0.18s ease, padding 0.18s ease;
-  overflow: hidden;
+  transition: max-height 0.25s var(--rw-ease), opacity 0.18s ease, padding 0.18s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rw-border) transparent;
 }
 
 /* Collapsed State */
@@ -426,6 +429,7 @@
   opacity: 0;
   padding-top: 0;
   padding-bottom: 0;
+  overflow: hidden;
 }
 
 .rw-quick-menu-wrapper.rw-menu-collapsed .rw-quick-menu-toggle {
@@ -437,6 +441,80 @@
 }
 
 .rw-starter-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+.rw-starter-primary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.rw-chip-toggle-more {
+  background: var(--rw-gold-light);
+  border-color: rgba(197, 160, 89, 0.45);
+}
+
+.rw-chip-toggle-more:hover {
+  background: #f5ede0;
+  border-color: var(--rw-gold);
+}
+
+.rw-chip-toggle-more.rw-more-is-open {
+  background: #f2e7d5;
+  border-color: var(--rw-gold-dark);
+}
+
+.rw-more-arrow-icon {
+  transition: transform 0.2s ease;
+}
+
+.rw-chip-toggle-more.rw-more-is-open .rw-more-arrow-icon {
+  transform: rotate(180deg);
+}
+
+.rw-subline-more {
+  color: var(--rw-gold-dark);
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.rw-more-menu-panel {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.26s var(--rw-ease), opacity 0.2s ease, margin-top 0.2s ease, padding 0.2s ease;
+  margin-top: 0;
+}
+
+.rw-more-menu-panel.rw-more-panel-open {
+  max-height: 290px;
+  opacity: 1;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(197, 160, 89, 0.35);
+}
+
+.rw-more-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  padding: 0 2px;
+}
+
+.rw-more-panel-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--rw-gold-dark);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.rw-more-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 5px;
@@ -1171,7 +1249,11 @@
 }
 
 @media (max-width: 340px) {
-  .rw-starter-menu { grid-template-columns: 1fr; }
+  .rw-starter-menu,
+  .rw-starter-primary-grid,
+  .rw-more-grid {
+    grid-template-columns: 1fr;
+  }
   .rw-menu-chip { height: 35px; }
   .rw-chip-label { font-size: 11px; }
 }
