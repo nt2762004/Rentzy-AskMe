@@ -212,17 +212,24 @@
 .rw-launcher-tooltip.rw-show {
   opacity: 1;
   pointer-events: auto;
-  animation: rw-tooltip-float 3.2s ease-in-out infinite;
+  animation: rw-tooltip-invite 3.4s ease-in-out infinite;
 }
 
-@keyframes rw-tooltip-float {
+@keyframes rw-tooltip-invite {
   0%, 100% {
-    transform: translateY(0) scale(1);
-    box-shadow: 0 8px 24px rgba(26, 24, 23, 0.22), 0 0 12px rgba(197, 160, 89, 0.15);
+    transform: translateY(0) scale(1) rotate(0deg);
+    box-shadow: 0 8px 24px rgba(26, 24, 23, 0.22), 0 0 12px rgba(197, 160, 89, 0.2);
+  }
+  28% {
+    transform: translateY(-7px) scale(1.03) rotate(-1deg);
+    box-shadow: 0 14px 30px rgba(26, 24, 23, 0.28), 0 0 18px rgba(224, 82, 99, 0.35);
   }
   50% {
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 14px 30px rgba(26, 24, 23, 0.28), 0 0 18px rgba(224, 82, 99, 0.28);
+    transform: translateY(-4px) scale(1.015) rotate(1deg);
+    box-shadow: 0 12px 26px rgba(26, 24, 23, 0.25), 0 0 15px rgba(197, 160, 89, 0.3);
+  }
+  72% {
+    transform: translateY(-1px) scale(1.005) rotate(0deg);
   }
 }
 
@@ -230,26 +237,64 @@
   border-color: #c5a059;
   background: linear-gradient(135deg, #2b2722 0%, #3a342c 100%);
   animation-play-state: paused;
-  transform: translateY(-2px) scale(1.02);
+  transform: translateY(-3px) scale(1.02);
+}
+
+.rw-tooltip-shimmer {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.rw-tooltip-shimmer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 65%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  transform: skewX(-25deg);
+  animation: rw-shimmer-sweep 3.6s infinite ease-in-out;
+}
+
+@keyframes rw-shimmer-sweep {
+  0%, 35% {
+    left: -120%;
+  }
+  65%, 100% {
+    left: 220%;
+  }
 }
 
 .rw-tooltip-body {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   user-select: none;
+  position: relative;
+  z-index: 1;
 }
 
-.rw-tooltip-sparkle {
-  font-size: 13px;
+.rw-tooltip-emoji {
+  font-size: 15px;
   line-height: 1;
   display: inline-block;
-  animation: rw-sparkle-spin 2.6s ease-in-out infinite;
+  transform-origin: 70% 70%;
+  animation: rw-hand-wave 2.2s infinite ease-in-out;
 }
 
-@keyframes rw-sparkle-spin {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  50%      { transform: scale(1.22) rotate(14deg); }
+@keyframes rw-hand-wave {
+  0%   { transform: rotate(0deg); }
+  10%  { transform: rotate(16deg) scale(1.15); }
+  20%  { transform: rotate(-10deg) scale(1.15); }
+  30%  { transform: rotate(14deg) scale(1.15); }
+  40%  { transform: rotate(-6deg) scale(1.1); }
+  50%  { transform: rotate(10deg) scale(1.05); }
+  60%  { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(0deg) scale(1); }
 }
 
 .rw-tooltip-text {

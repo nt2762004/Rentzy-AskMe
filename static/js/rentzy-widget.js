@@ -63,7 +63,7 @@
      CSS INJECTION (LINK + INLINE CRITICAL FALLBACK)
      ============================================================ */
 
-  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.0`;
+  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.1`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -153,33 +153,75 @@
       .rw-launcher-tooltip.rw-show {
         opacity: 1 !important;
         pointer-events: auto !important;
-        animation: rw-tooltip-float 3.2s ease-in-out infinite !important;
+        animation: rw-tooltip-invite 3.4s ease-in-out infinite !important;
       }
-      @keyframes rw-tooltip-float {
+      @keyframes rw-tooltip-invite {
         0%, 100% {
-          transform: translateY(0) scale(1);
-          box-shadow: 0 8px 24px rgba(26, 24, 23, 0.22), 0 0 12px rgba(197, 160, 89, 0.15);
+          transform: translateY(0) scale(1) rotate(0deg);
+          box-shadow: 0 8px 24px rgba(26, 24, 23, 0.22), 0 0 12px rgba(197, 160, 89, 0.2);
+        }
+        28% {
+          transform: translateY(-7px) scale(1.03) rotate(-1deg);
+          box-shadow: 0 14px 30px rgba(26, 24, 23, 0.28), 0 0 18px rgba(224, 82, 99, 0.35);
         }
         50% {
-          transform: translateY(-5px) scale(1.02);
-          box-shadow: 0 14px 30px rgba(26, 24, 23, 0.28), 0 0 18px rgba(224, 82, 99, 0.28);
+          transform: translateY(-4px) scale(1.015) rotate(1deg);
+          box-shadow: 0 12px 26px rgba(26, 24, 23, 0.25), 0 0 15px rgba(197, 160, 89, 0.3);
+        }
+        72% {
+          transform: translateY(-1px) scale(1.005) rotate(0deg);
+        }
+      }
+      .rw-tooltip-shimmer {
+        position: absolute !important;
+        inset: 0 !important;
+        border-radius: 20px !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+      }
+      .rw-tooltip-shimmer::before {
+        content: "" !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: -120% !important;
+        width: 65% !important;
+        height: 100% !important;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent) !important;
+        transform: skewX(-25deg) !important;
+        animation: rw-shimmer-sweep 3.6s infinite ease-in-out !important;
+      }
+      @keyframes rw-shimmer-sweep {
+        0%, 35% {
+          left: -120%;
+        }
+        65%, 100% {
+          left: 220%;
         }
       }
       .rw-tooltip-body {
         display: flex !important;
         align-items: center !important;
-        gap: 6px !important;
+        gap: 7px !important;
         user-select: none !important;
+        position: relative !important;
+        z-index: 1 !important;
       }
-      .rw-tooltip-sparkle {
-        font-size: 13px !important;
+      .rw-tooltip-emoji {
+        font-size: 15px !important;
         line-height: 1 !important;
         display: inline-block !important;
-        animation: rw-sparkle-spin 2.6s ease-in-out infinite !important;
+        transform-origin: 70% 70% !important;
+        animation: rw-hand-wave 2.2s infinite ease-in-out !important;
       }
-      @keyframes rw-sparkle-spin {
-        0%, 100% { transform: scale(1) rotate(0deg); }
-        50%      { transform: scale(1.22) rotate(14deg); }
+      @keyframes rw-hand-wave {
+        0%   { transform: rotate(0deg); }
+        10%  { transform: rotate(16deg) scale(1.15); }
+        20%  { transform: rotate(-10deg) scale(1.15); }
+        30%  { transform: rotate(14deg) scale(1.15); }
+        40%  { transform: rotate(-6deg) scale(1.1); }
+        50%  { transform: rotate(10deg) scale(1.05); }
+        60%  { transform: rotate(0deg) scale(1); }
+        100% { transform: rotate(0deg) scale(1); }
       }
       .rw-tooltip-text {
         font-size: 12px !important;
@@ -814,8 +856,9 @@
     root.innerHTML = `
       <!-- LAUNCHER TOOLTIP -->
       <div class="rw-launcher-tooltip" id="rw-tooltip" role="status" title="Nhấn để trò chuyện cùng Trợ lý thời trang AI">
+        <div class="rw-tooltip-shimmer" aria-hidden="true"></div>
         <div class="rw-tooltip-body" id="rw-tooltip-body">
-          <span class="rw-tooltip-sparkle" aria-hidden="true">✨</span>
+          <span class="rw-tooltip-emoji" aria-hidden="true">👋</span>
           <span class="rw-tooltip-text">Cần giúp chọn đồ không người đẹp?</span>
         </div>
         <button class="rw-tooltip-close" id="rw-tooltip-close" type="button" aria-label="Đóng thông báo">&times;</button>
