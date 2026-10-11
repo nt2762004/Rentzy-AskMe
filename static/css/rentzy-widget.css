@@ -34,8 +34,8 @@
   --rw-border:        #ede6de;
   --rw-border-hover:  #d8cebf;
 
-  --rw-window-w: 440px;
-  --rw-window-h: 630px;
+  --rw-window-w: 490px;
+  --rw-window-h: 670px;
 
   --rw-fab-size: 56px;
   --rw-header-h: 54px;
@@ -1420,7 +1420,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-height: 680px) {
+@media (max-height: 720px) {
   #rentzy-widget-root {
     --rw-window-h: calc(100vh - 32px);
   }
@@ -1433,7 +1433,7 @@
   #rentzy-widget-root {
     right: 16px;
     bottom: 16px;
-    --rw-window-w: min(440px, calc(100vw - 32px));
+    --rw-window-w: min(490px, calc(100vw - 32px));
   }
   .rw-chat-window,
   .rw-launcher-tooltip {

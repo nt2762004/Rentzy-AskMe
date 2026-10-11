@@ -63,7 +63,7 @@
      CSS INJECTION (LINK + INLINE CRITICAL FALLBACK)
      ============================================================ */
 
-  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=5.6`;
+  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=5.9`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -77,6 +77,22 @@
     const styleEl = document.createElement("style");
     styleEl.id = "rw-critical-styles";
     styleEl.textContent = `
+      #rentzy-widget-root {
+        --rw-window-w: 490px !important;
+        --rw-window-h: 670px !important;
+      }
+      .rw-chat-window {
+        width: min(490px, calc(100vw - 32px)) !important;
+        height: min(670px, calc(100vh - 32px)) !important;
+        max-height: calc(100vh - 32px) !important;
+      }
+      @media (max-width: 480px) {
+        .rw-chat-window {
+          width: calc(100vw - 20px) !important;
+          height: min(670px, calc(100vh - 20px)) !important;
+          max-height: calc(100vh - 20px) !important;
+        }
+      }
       .rw-welcome-options {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
