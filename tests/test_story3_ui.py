@@ -18,6 +18,7 @@ def test_static_js_widget_file():
     assert "rentzy_askme_session_id" in response.text
     assert "https://maps.app.goo.gl/ShHNabftWGUSmy6N6" in response.text
     assert "https://rentzy.vn/member-ship/" in response.text
+    assert "Cần giúp chọn đồ không người đẹp?" in response.text
 
 def test_static_css_widget_file():
     response = client.get("/static/css/rentzy-widget.css")

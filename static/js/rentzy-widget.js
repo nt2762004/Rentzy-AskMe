@@ -63,7 +63,7 @@
      CSS INJECTION (LINK + INLINE CRITICAL FALLBACK)
      ============================================================ */
 
-  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=5.9`;
+  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.0`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -92,6 +92,127 @@
           height: min(670px, calc(100vh - 20px)) !important;
           max-height: calc(100vh - 20px) !important;
         }
+      }
+      .rw-launcher-btn {
+        animation: rw-btn-breathe 4s ease-in-out infinite !important;
+      }
+      .rw-launcher-btn::before {
+        content: "" !important;
+        position: absolute !important;
+        inset: -5px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(224, 82, 99, 0.45) 0%, rgba(197, 160, 89, 0.35) 60%, transparent 100%) !important;
+        z-index: -1 !important;
+        animation: rw-pulse-ring 2.8s cubic-bezier(0.25, 1, 0.5, 1) infinite !important;
+        pointer-events: none !important;
+      }
+      @keyframes rw-pulse-ring {
+        0% { transform: scale(0.92); opacity: 0.85; }
+        60%, 100% { transform: scale(1.42); opacity: 0; }
+      }
+      @keyframes rw-btn-breathe {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.07); }
+      }
+      .rw-launcher-tooltip {
+        position: fixed !important;
+        right: 24px !important;
+        bottom: calc(24px + var(--rw-fab-size) + 12px) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 8px 12px 8px 14px !important;
+        max-width: 320px !important;
+        background: linear-gradient(135deg, #1f1d1a 0%, #2f2a24 100%) !important;
+        color: #fff !important;
+        border: 1px solid rgba(197, 160, 89, 0.5) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 10px 28px rgba(26, 24, 23, 0.25), 0 2px 8px rgba(197, 160, 89, 0.18) !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        white-space: nowrap !important;
+        opacity: 0 !important;
+        transform: translateY(8px) scale(0.94) !important;
+        pointer-events: none !important;
+        cursor: pointer !important;
+        transition: opacity 220ms var(--rw-ease), transform 220ms var(--rw-ease) !important;
+        z-index: 99998 !important;
+      }
+      .rw-launcher-tooltip::after {
+        content: "" !important;
+        position: absolute !important;
+        bottom: -6px !important;
+        right: 22px !important;
+        width: 10px !important;
+        height: 10px !important;
+        background: #27231f !important;
+        border-right: 1px solid rgba(197, 160, 89, 0.5) !important;
+        border-bottom: 1px solid rgba(197, 160, 89, 0.5) !important;
+        transform: rotate(45deg) !important;
+      }
+      .rw-launcher-tooltip.rw-show {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        animation: rw-tooltip-float 3.2s ease-in-out infinite !important;
+      }
+      @keyframes rw-tooltip-float {
+        0%, 100% {
+          transform: translateY(0) scale(1);
+          box-shadow: 0 8px 24px rgba(26, 24, 23, 0.22), 0 0 12px rgba(197, 160, 89, 0.15);
+        }
+        50% {
+          transform: translateY(-5px) scale(1.02);
+          box-shadow: 0 14px 30px rgba(26, 24, 23, 0.28), 0 0 18px rgba(224, 82, 99, 0.28);
+        }
+      }
+      .rw-tooltip-body {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        user-select: none !important;
+      }
+      .rw-tooltip-sparkle {
+        font-size: 13px !important;
+        line-height: 1 !important;
+        display: inline-block !important;
+        animation: rw-sparkle-spin 2.6s ease-in-out infinite !important;
+      }
+      @keyframes rw-sparkle-spin {
+        0%, 100% { transform: scale(1) rotate(0deg); }
+        50%      { transform: scale(1.22) rotate(14deg); }
+      }
+      .rw-tooltip-text {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: #f7e6c4 !important;
+        letter-spacing: 0.2px !important;
+      }
+      .rw-launcher-tooltip:hover .rw-tooltip-text {
+        color: #ffffff !important;
+      }
+      .rw-tooltip-close {
+        width: 18px !important;
+        height: 18px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 50% !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        cursor: pointer !important;
+        font-size: 13px !important;
+        line-height: 1 !important;
+        margin-left: 2px !important;
+      }
+      .rw-tooltip-close:hover {
+        background: rgba(224, 82, 99, 0.4) !important;
+        color: #fff !important;
+      }
+      #rentzy-widget-root.rw-is-open .rw-launcher-tooltip {
+        opacity: 0 !important;
+        pointer-events: none !important;
       }
       .rw-welcome-options {
         display: grid !important;
@@ -692,8 +813,11 @@
 
     root.innerHTML = `
       <!-- LAUNCHER TOOLTIP -->
-      <div class="rw-launcher-tooltip" id="rw-tooltip" role="status">
-        <span>Trợ lý thời trang AI</span>
+      <div class="rw-launcher-tooltip" id="rw-tooltip" role="status" title="Nhấn để trò chuyện cùng Trợ lý thời trang AI">
+        <div class="rw-tooltip-body" id="rw-tooltip-body">
+          <span class="rw-tooltip-sparkle" aria-hidden="true">✨</span>
+          <span class="rw-tooltip-text">Cần giúp chọn đồ không người đẹp?</span>
+        </div>
         <button class="rw-tooltip-close" id="rw-tooltip-close" type="button" aria-label="Đóng thông báo">&times;</button>
       </div>
 
@@ -801,7 +925,19 @@
 
     setupEventListeners();
 
-    tooltipTimer = window.setTimeout(hideTooltip, 7000);
+    // Show tooltip after 1.2s delay if not previously dismissed
+    const isDismissed = sessionStorage.getItem("rentzy_tooltip_dismissed") === "true";
+    if (!isDismissed) {
+      setTimeout(() => {
+        const tooltipEl = document.getElementById("rw-tooltip");
+        if (tooltipEl && !isOpen) {
+          tooltipEl.classList.add("rw-show");
+        }
+      }, 1200);
+
+      // Auto-hide after 35 seconds of inactivity
+      tooltipTimer = window.setTimeout(hideTooltip, 35000);
+    }
   }
 
   /* ============================================================
@@ -814,6 +950,7 @@
     const resetBtn = document.getElementById("rw-btn-reset");
     const sendBtn = document.getElementById("rw-send");
     const input = document.getElementById("rw-input");
+    const tooltip = document.getElementById("rw-tooltip");
     const tooltipClose = document.getElementById("rw-tooltip-close");
     const quickToggleBtn = document.getElementById("rw-quick-menu-toggle");
     const starterMenu = document.getElementById("rw-starter-menu");
@@ -833,10 +970,26 @@
       input.addEventListener("input", () => autoResize(input));
     }
 
+    if (tooltip) {
+      tooltip.addEventListener("click", (event) => {
+        if (event.target.closest("#rw-tooltip-close")) return;
+        openChat();
+      });
+
+      tooltip.addEventListener("mouseenter", () => {
+        if (tooltipTimer) {
+          clearTimeout(tooltipTimer);
+          tooltipTimer = null;
+        }
+      });
+    }
+
     if (tooltipClose) {
       tooltipClose.addEventListener("click", (event) => {
         event.stopPropagation();
+        event.preventDefault();
         hideTooltip();
+        sessionStorage.setItem("rentzy_tooltip_dismissed", "true");
       });
     }
 

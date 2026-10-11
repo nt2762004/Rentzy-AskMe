@@ -86,11 +86,40 @@
   pointer-events: auto;
   box-shadow: 0 8px 22px rgba(224, 82, 99, 0.4);
   transition: transform 0.22s var(--rw-ease-bounce), box-shadow 0.22s ease, opacity 0.18s ease;
+  animation: rw-btn-breathe 4s ease-in-out infinite;
+}
+
+.rw-launcher-btn::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(224, 82, 99, 0.45) 0%, rgba(197, 160, 89, 0.35) 60%, transparent 100%);
+  z-index: -1;
+  animation: rw-pulse-ring 2.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes rw-pulse-ring {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.85;
+  }
+  60%, 100% {
+    transform: scale(1.42);
+    opacity: 0;
+  }
+}
+
+@keyframes rw-btn-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.07); }
 }
 
 .rw-launcher-btn:hover {
-  transform: scale(1.06);
-  box-shadow: 0 10px 26px rgba(224, 82, 99, 0.52);
+  animation-play-state: paused;
+  transform: scale(1.12);
+  box-shadow: 0 10px 28px rgba(224, 82, 99, 0.55);
 }
 
 .rw-launcher-btn:focus-visible {
@@ -122,79 +151,141 @@
 
 @keyframes rw-pulse {
   0%, 100% { transform: scale(1); opacity: 1; }
-  50%       { transform: scale(1.12); opacity: 0.9; }
+  50%       { transform: scale(1.15); opacity: 0.92; }
 }
 
-/* Hide launcher when chat is open */
+/* Hide launcher & tooltip when chat is open */
 #rentzy-widget-root.rw-is-open .rw-launcher-btn {
   opacity: 0;
   pointer-events: none;
   transform: scale(0.8);
 }
 
+#rentzy-widget-root.rw-is-open .rw-launcher-tooltip {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(8px) scale(0.9) !important;
+}
+
 /* ============================================================
-   TOOLTIP
+   TOOLTIP NOTIFICATION ("Cần giúp chọn đồ không người đẹp?")
    ============================================================ */
 
 .rw-launcher-tooltip {
   position: fixed;
   right: 24px;
-  bottom: calc(24px + var(--rw-fab-size) + 10px);
+  bottom: calc(24px + var(--rw-fab-size) + 12px);
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 11px;
-  max-width: 220px;
-  background: var(--rw-dark);
+  gap: 8px;
+  padding: 8px 12px 8px 14px;
+  max-width: 320px;
+  background: linear-gradient(135deg, #1f1d1a 0%, #2f2a24 100%);
   color: #fff;
-  border: 1px solid rgba(197, 160, 89, 0.3);
-  border-radius: 10px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(197, 160, 89, 0.5);
+  border-radius: 20px;
+  box-shadow: 0 10px 28px rgba(26, 24, 23, 0.25), 0 2px 8px rgba(197, 160, 89, 0.18);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   opacity: 0;
-  transform: translateY(6px) scale(0.96);
+  transform: translateY(8px) scale(0.94);
   pointer-events: none;
-  transition: opacity 180ms var(--rw-ease), transform 180ms var(--rw-ease);
+  cursor: pointer;
+  transition: opacity 220ms var(--rw-ease), transform 220ms var(--rw-ease), box-shadow 0.2s ease;
+  z-index: 99998;
 }
 
 .rw-launcher-tooltip::after {
   content: "";
   position: absolute;
-  bottom: -5px;
+  bottom: -6px;
   right: 22px;
-  width: 8px;
-  height: 8px;
-  background: var(--rw-dark);
-  border-right: 1px solid rgba(197, 160, 89, 0.3);
-  border-bottom: 1px solid rgba(197, 160, 89, 0.3);
+  width: 10px;
+  height: 10px;
+  background: #27231f;
+  border-right: 1px solid rgba(197, 160, 89, 0.5);
+  border-bottom: 1px solid rgba(197, 160, 89, 0.5);
   transform: rotate(45deg);
 }
 
 .rw-launcher-tooltip.rw-show {
   opacity: 1;
-  transform: translateY(0) scale(1);
   pointer-events: auto;
+  animation: rw-tooltip-float 3.2s ease-in-out infinite;
+}
+
+@keyframes rw-tooltip-float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 8px 24px rgba(26, 24, 23, 0.22), 0 0 12px rgba(197, 160, 89, 0.15);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 14px 30px rgba(26, 24, 23, 0.28), 0 0 18px rgba(224, 82, 99, 0.28);
+  }
+}
+
+.rw-launcher-tooltip:hover {
+  border-color: #c5a059;
+  background: linear-gradient(135deg, #2b2722 0%, #3a342c 100%);
+  animation-play-state: paused;
+  transform: translateY(-2px) scale(1.02);
+}
+
+.rw-tooltip-body {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.rw-tooltip-sparkle {
+  font-size: 13px;
+  line-height: 1;
+  display: inline-block;
+  animation: rw-sparkle-spin 2.6s ease-in-out infinite;
+}
+
+@keyframes rw-sparkle-spin {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50%      { transform: scale(1.22) rotate(14deg); }
+}
+
+.rw-tooltip-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f7e6c4;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.rw-launcher-tooltip:hover .rw-tooltip-text {
+  color: #ffffff;
 }
 
 .rw-tooltip-close {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  margin-left: 2px;
+  transition: all 0.15s ease;
 }
 
 .rw-tooltip-close:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(224, 82, 99, 0.4);
   color: #fff;
+  transform: scale(1.1);
 }
 
 /* ============================================================
