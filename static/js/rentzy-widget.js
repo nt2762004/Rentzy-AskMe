@@ -63,9 +63,9 @@
      CSS INJECTION (LINK + INLINE CRITICAL FALLBACK)
      ============================================================ */
 
-  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.5`;
+  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.6`;
 
-  if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
+  if (!document.querySelector(`link[data-rentzy-widget-css="true"]`) && !document.querySelector(`link[href*="rentzy-widget.css"]`)) {
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = cssHref;
@@ -78,23 +78,52 @@
     styleEl.id = "rw-critical-styles";
     styleEl.textContent = `
       #rentzy-widget-root {
+        --rw-fab-size: 58px !important;
         --rw-window-w: 490px !important;
         --rw-window-h: 670px !important;
-      }
-      .rw-chat-window {
-        width: min(490px, calc(100vw - 32px)) !important;
-        height: min(670px, calc(100vh - 32px)) !important;
-        max-height: calc(100vh - 32px) !important;
-      }
-      @media (max-width: 480px) {
-        .rw-chat-window {
-          width: calc(100vw - 20px) !important;
-          height: min(670px, calc(100vh - 20px)) !important;
-          max-height: calc(100vh - 20px) !important;
-        }
+        position: fixed !important;
+        z-index: 99999 !important;
+        bottom: 0 !important;
+        right: 0 !important;
+        pointer-events: none !important;
       }
       .rw-launcher-btn {
+        position: fixed !important;
+        right: 24px !important;
+        bottom: 24px !important;
+        width: 58px !important;
+        height: 58px !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg, #e05263 0%, #b82e42 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 8px 24px rgba(224, 82, 99, 0.4) !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 99999 !important;
         animation: rw-btn-breathe 4s ease-in-out infinite !important;
+      }
+      .rw-launcher-btn svg {
+        width: 26px !important;
+        height: 26px !important;
+        fill: #ffffff !important;
+      }
+      .rw-launcher-badge {
+        position: absolute !important;
+        top: -2px !important;
+        right: -2px !important;
+        background: #c5a059 !important;
+        color: #ffffff !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        padding: 2px 6px !important;
+        border-radius: 10px !important;
+        border: 2px solid #ffffff !important;
+        line-height: 1 !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
       }
       .rw-launcher-btn::before {
         content: "" !important;
@@ -113,6 +142,43 @@
       @keyframes rw-btn-breathe {
         0%, 100% { transform: scale(1); }
         50%      { transform: scale(1.07); }
+      }
+      .rw-chat-window {
+        position: fixed !important;
+        right: 24px !important;
+        bottom: calc(24px + 58px + 12px) !important;
+        width: min(490px, calc(100vw - 32px)) !important;
+        height: min(670px, calc(100vh - 32px)) !important;
+        max-height: calc(100vh - 32px) !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transform: translateY(16px) scale(0.96) !important;
+        background: #ffffff !important;
+        border-radius: 20px !important;
+        box-shadow: 0 16px 48px rgba(26, 24, 23, 0.18) !important;
+        z-index: 99999 !important;
+      }
+      @media (max-width: 480px) {
+        .rw-chat-window {
+          width: calc(100vw - 20px) !important;
+          height: min(670px, calc(100vh - 20px)) !important;
+          max-height: calc(100vh - 20px) !important;
+          right: 10px !important;
+          bottom: 10px !important;
+        }
+        .rw-launcher-tooltip { display: none !important; }
+      }
+      #rentzy-widget-root.rw-is-open .rw-chat-window {
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        transform: translateY(0) scale(1) !important;
+      }
+      #rentzy-widget-root.rw-is-open .rw-launcher-btn {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: scale(0.8) !important;
       }
       .rw-launcher-tooltip {
         position: fixed !important;
