@@ -63,7 +63,7 @@
      CSS INJECTION (LINK + INLINE CRITICAL FALLBACK)
      ============================================================ */
 
-  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.4`;
+  const cssHref = `${assetBaseUrl}/static/css/rentzy-widget.css?v=6.5`;
 
   if (!document.querySelector(`link[data-rentzy-widget-css="true"]`)) {
     const link = document.createElement("link");
@@ -1377,7 +1377,7 @@
         <div class="rw-sales-banner">
           <div class="rw-sales-text">💬 Cần hỗ trợ giữ đồ ngay?</div>
           <a
-            href="https://zalo.me"
+            href="https://zalo.me/3199663178050331455"
             target="_blank"
             rel="noopener noreferrer"
             class="rw-sales-btn"
