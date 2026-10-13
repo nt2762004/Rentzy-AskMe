@@ -1,4 +1,7 @@
 import logging
+import warnings
+warnings.filterwarnings("ignore")
+
 from typing import Dict, Any, List, Optional, TypedDict
 from langgraph.graph import StateGraph, END
 from google import genai
@@ -11,9 +14,14 @@ from app.services.session import session_service
 from app.services.search import search_service
 from app.schemas.knowledge import SearchRequest, SearchFilter
 
+# Sub-agents
+from app.agents import membership, overview, support, policy, catalog
+
 logger = logging.getLogger(__name__)
 
-# 1. Định nghĩa AgentState cho LangGraph
+# ---------------------------------------------------------------------------
+# AgentState — shared state across all nodes
+# ---------------------------------------------------------------------------
 class AgentState(TypedDict):
     session_id: str
     message: str
@@ -27,58 +35,146 @@ class AgentState(TypedDict):
     reply_message: str
     fallback_count: int
     sources: Optional[List[Dict[str, Any]]]
+    handled_by: Optional[str]
 
-# 2. Định nghĩa các Node trong LangGraph
 
+# ---------------------------------------------------------------------------
+# Node 1: Classify Intent
+# ---------------------------------------------------------------------------
 def classify_intent_node(state: AgentState) -> Dict[str, Any]:
-    """Node 1: Phân loại ý định của tin nhắn người dùng."""
+    """Phân loại ý định của tin nhắn người dùng."""
     session = session_service.get_session(state["session_id"])
     chat_history_dicts = [m.model_dump() for m in session.messages]
 
+    logger.info(
+        "\n============================================================\n"
+        "[Supervisor:Inbound] Session=%s | Message='%s'",
+        state["session_id"],
+        state["message"],
+    )
+
     result = intent_classifier.classify(state["message"], chat_history=chat_history_dicts)
     intent_info = INTENT_CATALOG.get(result.intent, {})
+    intent_title = intent_info.get("title", "Không xác định")
+
+    logger.info(
+        "[Supervisor:Classifier] Intent: %s ('%s') | Confidence: %.2f | Clarification: %s",
+        result.intent,
+        intent_title,
+        result.confidence,
+        result.need_clarification,
+    )
 
     session.current_intent = result.intent
     session_service.save_session(session)
 
     return {
         "intent": result.intent,
-        "intent_title": intent_info.get("title", "Không xác định"),
+        "intent_title": intent_title,
         "confidence": result.confidence,
         "need_clarification": result.need_clarification,
         "suggested_options": result.suggested_options,
-        "fallback_count": session.fallback_count
+        "fallback_count": session.fallback_count,
     }
 
+
+# ---------------------------------------------------------------------------
+# Node 2a: Membership Agent Node  (delegates to sub-graph)
+# ---------------------------------------------------------------------------
+def membership_agent_node(state: AgentState) -> Dict[str, Any]:
+    """
+    Uỷ quyền hoàn toàn cho Membership Agent (sub-graph riêng).
+    """
+    session_service.reset_fallback_count(state["session_id"])
+    logger.info("[Supervisor:Delegate] Chuyen giao sang [MembershipAgent]")
+    output = membership.run(state)
+    output["handled_by"] = "membership_agent"
+    return output
+
+
+# ---------------------------------------------------------------------------
+# Node 2b: Overview Agent Node  (delegates to sub-graph)
+# ---------------------------------------------------------------------------
+def overview_agent_node(state: AgentState) -> Dict[str, Any]:
+    """
+    Uỷ quyền hoàn toàn cho Overview Agent (sub-graph riêng).
+    """
+    session_service.reset_fallback_count(state["session_id"])
+    logger.info("[Supervisor:Delegate] Chuyen giao sang [OverviewAgent]")
+    output = overview.run(state)
+    output["handled_by"] = "overview_agent"
+    return output
+
+
+# ---------------------------------------------------------------------------
+# Node 2c: Support Agent Node (delegates to sub-graph)
+# ---------------------------------------------------------------------------
+def support_agent_node(state: AgentState) -> Dict[str, Any]:
+    """
+    Uỷ quyền hoàn toàn cho Support Agent (sub-graph riêng).
+    """
+    session_service.reset_fallback_count(state["session_id"])
+    logger.info("[Supervisor:Delegate] Chuyen giao sang [SupportAgent]")
+    output = support.run(state)
+    output["handled_by"] = "support_agent"
+    return output
+
+
+# ---------------------------------------------------------------------------
+# Node 2d: Policy Agent Node (delegates to sub-graph)
+# ---------------------------------------------------------------------------
+def policy_agent_node(state: AgentState) -> Dict[str, Any]:
+    """
+    Uỷ quyền hoàn toàn cho Policy Agent (sub-graph riêng).
+    """
+    session_service.reset_fallback_count(state["session_id"])
+    logger.info("[Supervisor:Delegate] Chuyen giao sang [PolicyAgent]")
+    output = policy.run(state)
+    output["handled_by"] = "policy_agent"
+    return output
+
+
+# ---------------------------------------------------------------------------
+# Node 2e: Catalog Agent Node (delegates to sub-graph)
+# ---------------------------------------------------------------------------
+def catalog_agent_node(state: AgentState) -> Dict[str, Any]:
+    """
+    Uỷ quyền hoàn toàn cho Catalog Agent (sub-graph riêng).
+    """
+    session_service.reset_fallback_count(state["session_id"])
+    logger.info("[Supervisor:Delegate] Chuyen giao sang [CatalogAgent]")
+    output = catalog.run(state)
+    output["handled_by"] = "catalog_agent"
+    return output
+
+
+
+
+
+# ---------------------------------------------------------------------------
+# Node 2b: Retrieve Knowledge (generic — cho các intent active khác)
+# ---------------------------------------------------------------------------
 def retrieve_knowledge_node(state: AgentState) -> Dict[str, Any]:
-    """Node 2: Lấy tri thức từ Story 1 Search Service và tổng hợp câu trả lời."""
-    # Reset fallback counter vì đã hiểu intent
+    """Lấy tri thức từ Qdrant và tổng hợp câu trả lời bằng Gemini."""
     session_service.reset_fallback_count(state["session_id"])
 
-    # Mapping intent sang topic của Story 1 (khớp 1-1 với 14 topic Excel)
     topic_filter = INTENT_TO_TOPIC_MAP.get(state["intent"], state["intent"])
     if topic_filter == "fallback":
         topic_filter = None
 
-
     search_req = SearchRequest(
         query=state["message"],
         top_k=3,
-        filter=SearchFilter(
-            status="active",
-            topic=topic_filter
-        )
+        filter=SearchFilter(status="active", topic=topic_filter),
     )
-
     search_res = search_service.search_knowledge(search_req)
 
-    # Nếu không tìm thấy kết quả từ topic filter, tìm kiếm tự do trên active status
     if search_res.total_results == 0 and topic_filter:
         search_req.filter.topic = None
         search_res = search_service.search_knowledge(search_req)
 
-    context_texts = []
-    sources = []
+    context_texts: List[str] = []
+    sources: List[Dict[str, Any]] = []
     for item in search_res.results:
         context_texts.append(f"- {item.content}")
         sources.append({
@@ -86,77 +182,77 @@ def retrieve_knowledge_node(state: AgentState) -> Dict[str, Any]:
             "document_id": item.metadata.document_id,
             "record_id": item.metadata.record_id,
             "score": item.score,
-            "source_url": item.metadata.source_url
+            "source_url": item.metadata.source_url,
         })
 
     context_str = "\n".join(context_texts) if context_texts else "Chưa tìm thấy bài viết chi tiết trong hệ thống."
 
-    # Tổng hợp câu trả lời bằng Gemini Flash Lite
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-    membership_instruction = ""
-    if state["intent"] == IntentEnum.MEMBERSHIP.value:
-        membership_instruction = """
-- QUY TẮC BẮT BUỘC VỀ MEMBERSHIP: Vì khách hàng đang hỏi về Gói thành viên (Membership), ở cuối câu trả lời, bạn BẮT BUỘC phải đính kèm đường link chính thức sau để hệ thống tự động hiển thị nút bấm chuyển tiếp sang trang đăng ký gói cho khách hàng: https://rentzy.vn/member-ship/"""
-
-    prompt = f"""Bạn là Trợ lý AI AskMe của thương hiệu thời trang Rentzy.
-Dựa vào ngữ cảnh thông tin chính thức dưới đây từ hệ thống Rentzy, hãy trả lời câu hỏi của khách hàng một cách lịch sự, tự nhiên, thân thiện (xưng 'Rentzy' hoặc 'mình', gọi khách là 'Nàng' hoặc 'khách hàng').
-
-[Yêu cầu phong cách & Trình bày]:
-- Trả lời NGẮN GỌN, TRỰC TIẾP vào câu hỏi, TUYỆT ĐỐI KHÔNG viết đoạn văn dài dòng hay lan man.
-- Độ dài lý tưởng: Chỉ từ 2-4 dòng hoặc 2-3 gạch đầu dòng (-) súc tích nhất để giải đáp ngay thắc mắc của Nàng.
-- Khi liệt kê các ý/quyền lợi/chi tiết, BẮT BUỘC dùng dấu gạch đầu dòng (-) ở đầu mỗi ý.
-- Khi nhắc đến Hotline (0798969040) hoặc Địa chỉ Showroom (51 đường số 41, phường Khánh Hội, TP. Hồ Chí Minh), hãy tách rõ ràng trên dòng riêng để khách dễ nhận diện.
-- Tuyệt đối hạn chế/không sử dụng các icon lấp lánh như ✨, emoji hoa lá trang trí không cần thiết trong câu trả lời. Giữ phong cách thời trang thanh lịch, tinh tế.{membership_instruction}
-
-[Thông tin chính thức Rentzy]:
-{context_str}
-
-[Câu hỏi của khách hàng]: "{state['message']}"
-"""
+    prompt = (
+        "Bạn là Trợ lý AI AskMe của thương hiệu thời trang Rentzy.\n"
+        "Dựa vào ngữ cảnh thông tin chính thức dưới đây từ hệ thống Rentzy, hãy trả lời câu hỏi của khách hàng "
+        "một cách lịch sự, tự nhiên, thân thiện (xưng 'Rentzy' hoặc 'mình', gọi khách là 'Nàng' hoặc 'khách hàng').\n\n"
+        "[Yêu cầu phong cách & Trình bày]:\n"
+        "- Trả lời NGẮN GỌN, TRỰC TIẾP vào câu hỏi, TUYỆT ĐỐI KHÔNG viết đoạn văn dài dòng hay lan man.\n"
+        "- Độ dài lý tưởng: Chỉ từ 2-4 dòng hoặc 2-3 gạch đầu dòng (-) súc tích nhất để giải đáp ngay thắc mắc của Nàng.\n"
+        "- Khi liệt kê các ý/quyền lợi/chi tiết, BẮT BUỘC dùng dấu gạch đầu dòng (-) ở đầu mỗi ý.\n"
+        "- Khi nhắc đến Hotline (0798969040) hoặc Địa chỉ Showroom (51 đường số 41, phường Khánh Hội, TP. Hồ Chí Minh), "
+        "hãy tách rõ ràng trên dòng riêng để khách dễ nhận diện.\n"
+        "- Tuyệt đối hạn chế/không sử dụng các icon lấp lánh như ✨, emoji hoa lá trang trí không cần thiết trong câu trả lời.\n\n"
+        f"[Thông tin chính thức Rentzy]:\n{context_str}\n\n"
+        f"[Câu hỏi của khách hàng]: \"{state['message']}\"\n"
+    )
 
     try:
-        res = client.models.generate_content(
-            model=settings.LLM_MODEL_NAME,
-            contents=prompt
-        )
+        res = client.models.generate_content(model=settings.LLM_MODEL_NAME, contents=prompt)
         reply = res.text.strip()
     except Exception as e:
-        logger.error(f"Lỗi tổng hợp câu trả lời ({e})")
+        logger.error("Lỗi tổng hợp câu trả lời (%s)", e)
         reply = context_texts[0] if context_texts else "Rentzy xin chào Nàng! Nàng cần hỗ trợ thông tin gì ạ?"
 
-    # Đảm bảo 100% luôn có link https://rentzy.vn/member-ship/ khi hỏi về membership để widget tự động tạo nút bấm
-    if state["intent"] == IntentEnum.MEMBERSHIP.value and "https://rentzy.vn/member-ship/" not in reply:
-        reply += "\n\nhttps://rentzy.vn/member-ship/"
-
+    logger.info("[Supervisor:Worker] Xử lý câu hỏi qua [GeneralKnowledgeNode]")
     return {
         "reply_message": reply,
         "sources": sources,
         "fallback_count": 0,
         "suggest_sales": False,
-        "suggested_options": None
+        "suggested_options": None,
+        "handled_by": "general_knowledge_agent",
     }
 
+
+# ---------------------------------------------------------------------------
+# Node 3: Ask Clarification
+# ---------------------------------------------------------------------------
 def ask_clarification_node(state: AgentState) -> Dict[str, Any]:
-    """Node 3: Sinh câu hỏi làm rõ nhu cầu khi yêu cầu mơ hồ hoặc có nhiều ý định."""
+    """Sinh câu hỏi làm rõ nhu cầu khi yêu cầu mơ hồ hoặc có nhiều ý định."""
+    logger.info("[Supervisor:Worker] Yêu cầu mơ hồ -> Kích hoạt [ClarificationNode]")
     options = state.get("suggested_options") or [
         "Giới thiệu Rentzy",
         "Gói thành viên",
-        "Chính sách đặt cọc (Upcoming)"
+        "Liên hệ hỗ trợ",
     ]
-
-    reply = "Dạ Rentzy nhận thấy câu hỏi của Nàng có thể liên quan đến nhiều nội dung. Nàng vui lòng chọn hoặc làm rõ nhu cầu cụ thể bên dưới để Rentzy hỗ trợ ngay nhé:"
-
+    reply = (
+        "Dạ Rentzy nhận thấy câu hỏi của Nàng có thể liên quan đến nhiều nội dung. "
+        "Nàng vui lòng chọn hoặc làm rõ nhu cầu cụ thể bên dưới để Rentzy hỗ trợ ngay nhé:"
+    )
     return {
         "reply_message": reply,
         "need_clarification": True,
         "suggest_sales": False,
-        "suggested_options": options
+        "suggested_options": options,
+        "handled_by": "supervisor_clarification",
     }
 
+
+# ---------------------------------------------------------------------------
+# Node 4: Handle Fallback
+# ---------------------------------------------------------------------------
 def handle_fallback_node(state: AgentState) -> Dict[str, Any]:
-    """Node 4: Xử lý khi độ tin cậy thấp hoặc không hiểu nhu cầu. Đếm số lần thất bại."""
+    """Xử lý khi độ tin cậy thấp hoặc không hiểu nhu cầu."""
     current_count = session_service.increment_fallback_count(state["session_id"])
+    logger.info("[Supervisor:Worker] Độ tin cậy thấp -> [FallbackNode] (lần %d)", current_count)
 
     if current_count >= 2:
         reply = (
@@ -164,118 +260,142 @@ def handle_fallback_node(state: AgentState) -> Dict[str, Any]:
             "- Hotline tư vấn: 0798969040\n"
             "- Địa chỉ Showroom: 51 đường số 41, phường Khánh Hội, TP. Hồ Chí Minh"
         )
-        return {
-            "reply_message": reply,
-            "suggest_sales": True,
-            "fallback_count": current_count,
-            "suggested_options": None
-        }
+        return {"reply_message": reply, "suggest_sales": True, "fallback_count": current_count, "suggested_options": None, "handled_by": "supervisor_fallback"}
 
-    reply = "Dạ Rentzy chưa hiểu rõ câu hỏi này của Nàng lắm. Nàng có thể hỏi lại ngắn gọn hơn hoặc cho Rentzy biết Nàng đang cần hỗ trợ về dịch vụ thuê đồ, gói thành viên hay chính sách nào được không ạ?"
-    return {
-        "reply_message": reply,
-        "suggest_sales": False,
-        "fallback_count": current_count,
-        "suggested_options": None
-    }
+    reply = (
+        "Dạ Rentzy chưa hiểu rõ câu hỏi này của Nàng lắm. "
+        "Nàng có thể hỏi lại ngắn gọn hơn hoặc cho Rentzy biết Nàng đang cần hỗ trợ về "
+        "dịch vụ thuê đồ, gói thành viên hay chính sách nào được không ạ?"
+    )
+    return {"reply_message": reply, "suggest_sales": False, "fallback_count": current_count, "suggested_options": None, "handled_by": "supervisor_fallback"}
 
+
+# ---------------------------------------------------------------------------
+# Node 5: Contact Sales
+# ---------------------------------------------------------------------------
 def contact_sales_node(state: AgentState) -> Dict[str, Any]:
-    """Node 5: Xử lý Intent Liên hệ Sales."""
+    """Xử lý Intent Liên hệ Sales."""
     session_service.reset_fallback_count(state["session_id"])
+    logger.info("[Supervisor:Worker] Yêu cầu liên hệ -> [ContactSalesNode]")
     reply = (
         "Dạ Nàng! Để được tư vấn trực tiếp từ đội ngũ Rentzy, Nàng có thể liên hệ qua:\n\n"
         "- Hotline CSKH & Sales: 0798969040\n"
         "- Địa chỉ Showroom: 51 đường số 41, phường Khánh Hội, TP. Hồ Chí Minh"
     )
-    return {
-        "reply_message": reply,
-        "suggest_sales": True,
-        "fallback_count": 0,
-        "suggested_options": None
-    }
+    return {"reply_message": reply, "suggest_sales": True, "fallback_count": 0, "suggested_options": None, "handled_by": "support_sales_agent"}
 
+
+# ---------------------------------------------------------------------------
+# Node 6: Out of Scope
+# ---------------------------------------------------------------------------
 def out_of_scope_node(state: AgentState) -> Dict[str, Any]:
-    """Node 6: Xử lý các câu hỏi ngoài phạm vi. Tự động đề xuất Sales nếu lặp lại 2 lần."""
+    """Xử lý các câu hỏi ngoài phạm vi."""
     current_count = session_service.increment_fallback_count(state["session_id"])
+    logger.info("[Supervisor:Worker] Ngoài phạm vi -> [OutOfScopeGuardrail] (lần %d)", current_count)
 
     if current_count >= 2:
         reply = (
-            "Dạ Rentzy nhận thấy câu hỏi của Nàng nằm ngoài phạm vi tự động của hệ thống. Nàng có thể liên hệ trực tiếp với chuyên viên tư vấn qua:\n\n"
+            "Dạ Rentzy nhận thấy câu hỏi của Nàng nằm ngoài phạm vi tự động của hệ thống. "
+            "Nàng có thể liên hệ trực tiếp với chuyên viên tư vấn qua:\n\n"
             "- Hotline tư vấn: 0798969040\n"
             "- Địa chỉ Showroom: 51 đường số 41, phường Khánh Hội, TP. Hồ Chí Minh"
         )
-        return {
-            "reply_message": reply,
-            "suggest_sales": True,
-            "fallback_count": current_count,
-            "suggested_options": None
-        }
+        return {"reply_message": reply, "suggest_sales": True, "fallback_count": current_count, "suggested_options": None, "handled_by": "supervisor_guardrail"}
 
-    reply = "Dạ Rentzy là tủ đồ thời trang cho thuê, hiện tại mình chỉ hỗ trợ các câu hỏi liên quan đến sản phẩm, dịch vụ và chính sách của Rentzy thôi ạ. Nàng có cần tìm hiểu về thuê váy đi tiệc, gói membership hay chính sách cọc đồ không ạ?"
-    return {
-        "reply_message": reply,
-        "suggest_sales": False,
-        "fallback_count": current_count,
-        "suggested_options": None
-    }
+    reply = (
+        "Dạ Rentzy là tủ đồ thời trang cho thuê, hiện tại mình chỉ hỗ trợ các câu hỏi liên quan đến "
+        "sản phẩm, dịch vụ và chính sách của Rentzy thôi ạ. "
+        "Nàng có cần tìm hiểu về thuê váy đi tiệc, gói membership hay chính sách cọc đồ không ạ?"
+    )
+    return {"reply_message": reply, "suggest_sales": False, "fallback_count": current_count, "suggested_options": None, "handled_by": "supervisor_guardrail"}
 
-# 3. Danh sách các Intent đang mở thử nghiệm (Active Intents)
-ACTIVE_INTENTS = {
-    IntentEnum.RENTZY_OVERVIEW.value,
-    IntentEnum.MEMBERSHIP.value,
-    IntentEnum.CONTACT_SUPPORT.value,
-}
 
+# ---------------------------------------------------------------------------
+# Node 7: Upcoming Feature
+# ---------------------------------------------------------------------------
 def upcoming_feature_node(state: AgentState) -> Dict[str, Any]:
-    """Node xử lý các tính năng/intent đang trong kế hoạch phát triển (Upcoming)."""
+    """Xử lý các tính năng/intent đang trong kế hoạch phát triển (Upcoming)."""
     session_service.reset_fallback_count(state["session_id"])
     intent_info = INTENT_CATALOG.get(state["intent"], {})
     title = intent_info.get("title", state["intent"])
+    logger.info("[Supervisor:Worker] Tính năng đang phát triển -> [UpcomingFeatureNode] ('%s')", title)
 
+    suggested = ["Giới thiệu về Rentzy", "Xem các gói Membership", "Gặp chuyên viên tư vấn"]
     reply = (
-        f"Dạ Nàng ơi! Tính năng **{title}** hiện đang được Rentzy phát triển và sẽ sớm ra mắt (**Upcoming**) ạ.\n\n"
-        "Nàng có thể tham khảo trước thông tin dịch vụ hoặc gói hội viên của Rentzy nhé!"
+        f"Dạ Nàng ơi! Tính năng **{title}** hiện đang được Rentzy hoàn thiện và sẽ sớm ra mắt (**Upcoming**) ạ.\n\n"
+        "Trong thời gian này, Nàng có thể tham khảo thông tin giới thiệu dịch vụ, các gói hội viên Membership, hoặc liên hệ nhân viên hỗ trợ CSKH của Rentzy nhé!"
     )
-
     return {
         "reply_message": reply,
         "sources": [],
         "fallback_count": 0,
         "suggest_sales": False,
-        "suggested_options": None
+        "suggested_options": suggested,
+        "handled_by": "supervisor_upcoming",
     }
 
-# 4. Định nghĩa rẽ nhánh điều kiện (Router Logic)
+
+# ---------------------------------------------------------------------------
+# Cấu hình kích hoạt các Sub-Agents
+# Hiện tại: Chỉ Overview, Membership và Support hoạt động. Các agent còn lại tạm thời để upcoming.
+# ---------------------------------------------------------------------------
+ENABLE_POLICY_AGENT = False   # Tạm thời để upcoming theo yêu cầu
+ENABLE_CATALOG_AGENT = False  # Tạm thời để upcoming theo yêu cầu
+
+
+# ---------------------------------------------------------------------------
+# Router Logic
+# ---------------------------------------------------------------------------
 def route_next_step(state: AgentState) -> str:
-    # Nếu intent là contact_support -> Chuyển node sales
-    if state["intent"] == IntentEnum.CONTACT_SUPPORT.value:
-        return "contact_sales"
+    # 1. Các Sub-Agents đang hoạt động chính thức
+    if state["intent"] == IntentEnum.MEMBERSHIP.value:
+        target = "membership_agent"
+    elif state["intent"] in (IntentEnum.RENTZY_OVERVIEW.value, IntentEnum.SHOWROOM_FITTING.value):
+        target = "overview_agent"
+    elif state["intent"] in (IntentEnum.CONTACT_SUPPORT.value, IntentEnum.ORDER_SUPPORT.value):
+        target = "support_agent"
+    # 2. Các Sub-Agents tạm thời chuyển sang Upcoming
+    elif state["intent"] in (
+        IntentEnum.DEPOSIT_POLICY.value,
+        IntentEnum.DEPOSIT_REFUND.value,
+        IntentEnum.RENTAL_PRICING.value,
+        IntentEnum.RECEIVE_RETURN.value,
+    ):
+        target = "policy_agent" if ENABLE_POLICY_AGENT else "upcoming_feature"
+    elif state["intent"] in (
+        IntentEnum.PRODUCT_SEARCH.value,
+        IntentEnum.PRODUCT_PRICE.value,
+        IntentEnum.RENT_OR_LIQUIDATION.value,
+        IntentEnum.LIQUIDATION.value,
+    ):
+        target = "catalog_agent" if ENABLE_CATALOG_AGENT else "upcoming_feature"
+    # 3. Guardrails & Fallbacks
+    elif state["intent"] == IntentEnum.FALLBACK.value:
+        target = "out_of_scope"
+    elif state.get("need_clarification") and state.get("confidence", 0) < 0.90:
+        target = "clarification"
+    elif state.get("confidence", 0) < 0.70:
+        target = "fallback"
+    else:
+        target = "upcoming_feature"
 
-    # Nếu intent là fallback -> Chuyển node out_of_scope
-    if state["intent"] == IntentEnum.FALLBACK.value:
-        return "out_of_scope"
+    logger.info("[Supervisor:Router] Điều hướng đến Target Node: [%s]", target)
+    return target
 
-    # Nếu cần làm rõ ý định (multi-intent / mơ hồ) -> Chuyển node clarification
-    if state.get("need_clarification") and state.get("confidence", 0) < 0.90:
-        return "clarification"
 
-    # Nếu độ tin cậy thấp < 0.70 -> Chuyển node fallback
-    if state.get("confidence", 0) < 0.70:
-        return "fallback"
-
-    # Nếu intent chưa nằm trong danh sách mở thử nghiệm -> Chuyển node upcoming_feature
-    if state["intent"] not in ACTIVE_INTENTS:
-        return "upcoming_feature"
-
-    # Mặc định: Thuộc các Intent đang mở thử nghiệm -> Truy xuất tri thức Story 1
-    return "retrieve_knowledge"
-
-# 5. Xây dựng và Biên dịch StateGraph LangGraph
+# ---------------------------------------------------------------------------
+# Build & Compile Main Dialogue Graph
+# ---------------------------------------------------------------------------
 def build_dialogue_graph():
     workflow = StateGraph(AgentState)
 
-    # Thêm các Node
+    # Nodes
     workflow.add_node("classify", classify_intent_node)
+    workflow.add_node("membership_agent", membership_agent_node)
+    workflow.add_node("overview_agent", overview_agent_node)
+    workflow.add_node("support_agent", support_agent_node)
+    workflow.add_node("policy_agent", policy_agent_node)
+    workflow.add_node("catalog_agent", catalog_agent_node)
     workflow.add_node("retrieve_knowledge", retrieve_knowledge_node)
     workflow.add_node("clarification", ask_clarification_node)
     workflow.add_node("fallback", handle_fallback_node)
@@ -283,24 +403,34 @@ def build_dialogue_graph():
     workflow.add_node("out_of_scope", out_of_scope_node)
     workflow.add_node("upcoming_feature", upcoming_feature_node)
 
-    # Thiết lập Điểm khởi đầu (Entry Point)
+    # Entry point
     workflow.set_entry_point("classify")
 
-    # Thêm Rẽ nhánh Điều kiện từ Node Classify
+    # Conditional routing from classify
     workflow.add_conditional_edges(
         "classify",
         route_next_step,
         {
-            "contact_sales": "contact_sales",
-            "out_of_scope": "out_of_scope",
-            "clarification": "clarification",
-            "fallback": "fallback",
-            "upcoming_feature": "upcoming_feature",
-            "retrieve_knowledge": "retrieve_knowledge"
-        }
+            "membership_agent":  "membership_agent",
+            "overview_agent":    "overview_agent",
+            "support_agent":     "support_agent",
+            "policy_agent":      "policy_agent",
+            "catalog_agent":     "catalog_agent",
+            "contact_sales":     "contact_sales",
+            "out_of_scope":      "out_of_scope",
+            "clarification":     "clarification",
+            "fallback":          "fallback",
+            "upcoming_feature":  "upcoming_feature",
+            "retrieve_knowledge": "retrieve_knowledge",
+        },
     )
 
-    # Tất cả các nút kết thúc đều dẫn về END
+    # All terminal nodes → END
+    workflow.add_edge("membership_agent", END)
+    workflow.add_edge("overview_agent", END)
+    workflow.add_edge("support_agent", END)
+    workflow.add_edge("policy_agent", END)
+    workflow.add_edge("catalog_agent", END)
     workflow.add_edge("retrieve_knowledge", END)
     workflow.add_edge("clarification", END)
     workflow.add_edge("fallback", END)
@@ -309,5 +439,6 @@ def build_dialogue_graph():
     workflow.add_edge("upcoming_feature", END)
 
     return workflow.compile()
+
 
 dialogue_graph = build_dialogue_graph()

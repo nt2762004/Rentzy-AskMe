@@ -145,30 +145,63 @@
       }
       .rw-chat-window {
         position: fixed !important;
+
+        /* Giữ khoảng cách an toàn với các cạnh viewport */
+        top: 24px !important;
         right: 24px !important;
-        bottom: calc(24px + 58px + 12px) !important;
-        width: min(490px, calc(100vw - 32px)) !important;
-        height: min(670px, calc(100vh - 32px)) !important;
-        max-height: calc(100vh - 32px) !important;
+        bottom: 24px !important;
+
+        width: min(490px, calc(100vw - 48px)) !important;
+
+        /* Chiều cao tự co theo vùng hiển thị */
+        height: auto !important;
+        max-height: none !important;
+        min-height: 0 !important;
+
+        box-sizing: border-box !important;
+
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
-        transform: translateY(16px) scale(0.96) !important;
+        transform: translateY(12px) scale(0.98) !important;
+
         background: #ffffff !important;
         border-radius: 20px !important;
         box-shadow: 0 16px 48px rgba(26, 24, 23, 0.18) !important;
         z-index: 99999 !important;
       }
+
+      @media (max-width: 768px) {
+        .rw-chat-window {
+          top: 16px !important;
+          right: 16px !important;
+          bottom: 16px !important;
+          left: auto !important;
+
+          width: min(490px, calc(100vw - 32px)) !important;
+          height: auto !important;
+          max-height: none !important;
+        }
+      }
+
       @media (max-width: 480px) {
         .rw-chat-window {
-          width: calc(100vw - 20px) !important;
-          height: min(670px, calc(100vh - 20px)) !important;
-          max-height: calc(100vh - 20px) !important;
+          top: 10px !important;
           right: 10px !important;
           bottom: 10px !important;
+          left: 10px !important;
+
+          width: auto !important;
+          height: auto !important;
+          max-height: none !important;
+          border-radius: 16px !important;
         }
-        .rw-launcher-tooltip { display: none !important; }
+
+        .rw-launcher-tooltip {
+          display: none !important;
+        }
       }
+
       #rentzy-widget-root.rw-is-open .rw-chat-window {
         opacity: 1 !important;
         visibility: visible !important;
@@ -738,6 +771,18 @@
         ""
       );
     }
+
+    // Strip redundant Zalo text lines since the widget already renders the dedicated Chat Zalo button below
+    text = text.replace(
+      /(?:(?:[-•*]\s*)?(?:Zalo(?: hỗ trợ| tư vấn)?|Chat Zalo|Liên hệ Zalo)?\s*:\s*)?(?:\[[^\]]*\]\()?https:\/\/zalo\.me\/[^\s\)\<\>]*/gi,
+      ""
+    );
+
+    // Strip redundant standalone maps URL lines (before creating the address badge so we don't erase its href)
+    text = text.replace(
+      /(?:(?:[-•*]\s*)?(?:Chỉ đường(?: Google Maps)?|Google Maps|Link chỉ đường)?\s*:\s*)?(?:\[[^\]]*\]\()?https:\/\/maps\.app\.goo\.gl\/[^\s\)\<\>]+/gi,
+      ""
+    );
 
     // 2. Highlight Phone Numbers -> Click to call hotline
     text = text.replace(

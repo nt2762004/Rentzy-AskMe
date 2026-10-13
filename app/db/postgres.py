@@ -28,7 +28,7 @@ try:
     engine = create_engine(
         db_url,
         pool_pre_ping=True,
-        echo=settings.DEBUG
+        echo=False
     )
     # Test connection
     with engine.connect() as conn:
@@ -41,7 +41,7 @@ except Exception as e:
     engine = create_engine(
         sqlite_url,
         connect_args={"check_same_thread": False},
-        echo=settings.DEBUG
+        echo=False
     )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

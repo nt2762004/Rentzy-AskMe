@@ -1,5 +1,8 @@
 import json
 import logging
+import warnings
+warnings.filterwarnings("ignore")
+
 from typing import Dict, Any, List, Optional
 from google import genai
 from google.genai import types
@@ -96,14 +99,23 @@ BẮT BUỘC TRẢ VỀ DẠNG JSON SCHEMA CHÍNH XÁC:
 
         except Exception as e:
             logger.error(f"Lỗi khi gọi Gemini Intent Classifier ({e}). Fallback về Heuristic matching!")
-            # Fallback heuristic
+            # Fallback heuristic: chọn intent có từ khóa khớp đặc thù nhất (tổng độ dài match cao nhất)
+            best_intent = None
+            best_score = 0
             for code, info in INTENT_CATALOG.items():
-                if any(kw in normalized_msg for kw in info["keywords"]):
-                    return IntentClassificationResult(
-                        intent=code,
-                        confidence=0.75,
-                        reasoning="Fallback keyword match"
-                    )
+                matched_kws = [kw for kw in info.get("keywords", []) if kw in normalized_msg]
+                if matched_kws:
+                    score = sum(len(kw) for kw in matched_kws)
+                    if score > best_score:
+                        best_score = score
+                        best_intent = code
+
+            if best_intent:
+                return IntentClassificationResult(
+                    intent=best_intent,
+                    confidence=0.75,
+                    reasoning="Fallback keyword match"
+                )
 
             return IntentClassificationResult(
                 intent=IntentEnum.FALLBACK.value,

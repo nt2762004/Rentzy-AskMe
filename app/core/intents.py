@@ -24,7 +24,7 @@ INTENT_CATALOG: Dict[str, Dict[str, Any]] = {
     IntentEnum.RENTZY_OVERVIEW.value: {
         "title": "Giới thiệu Rentzy & Dịch vụ",
         "description": "Các thông tin tổng quan, mô hình tủ đồ thời trang cho thuê, dịch vụ, địa chỉ showroom, hotline của Rentzy.",
-        "keywords": ["rentzy", "giới thiệu", "thương hiệu", "dịch vụ", "mô hình", "tủ đồ thời trang", "showroom", "địa chỉ"],
+        "keywords": ["rentzy là gì", "về rentzy", "giới thiệu", "thương hiệu", "dịch vụ", "mô hình", "tủ đồ thời trang", "showroom", "địa chỉ"],
         "examples": [
             "Rentzy là gì?",
             "Rentzy là dịch vụ gì vậy?",

@@ -38,6 +38,14 @@ def chat_with_askme(req: ChatRequest):
         # 3. Ghi tin nhắn assistant vào Session Store và cập nhật current_intent
         session_service.add_message(req.session_id, role="assistant", content=reply, intent=intent_code)
 
+        handled_by = graph_output.get("handled_by", "supervisor")
+        logger.info(
+            "[Supervisor:Outbound] Hoàn tất | Handled By: [%s] | Reply Length: %d chars\n"
+            "============================================================",
+            handled_by,
+            len(reply),
+        )
+
         return ChatResponse(
             session_id=req.session_id,
             intent=intent_code,
@@ -47,7 +55,8 @@ def chat_with_askme(req: ChatRequest):
             need_clarification=bool(graph_output.get("need_clarification", False)),
             suggest_sales=bool(graph_output.get("suggest_sales", False)),
             suggested_options=graph_output.get("suggested_options"),
-            sources=graph_output.get("sources")
+            sources=graph_output.get("sources"),
+            handled_by=handled_by,
         )
 
     except Exception as e:

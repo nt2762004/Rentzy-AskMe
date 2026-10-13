@@ -353,8 +353,8 @@
   right: 24px;
   bottom: 24px;
   width: var(--rw-window-w);
-  height: var(--rw-window-h);
-  max-height: calc(100vh - 32px);
+  height: min(var(--rw-window-h), calc(100vh - 48px));
+  max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -374,6 +374,41 @@
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
+}
+
+/* Fix: keep the entire chat window inside the viewport */
+#rentzy-widget-root .rw-chat-window {
+  position: fixed !important;
+  top: 24px !important;
+  right: 24px !important;
+  bottom: 24px !important;
+  left: auto !important;
+
+  width: min(490px, calc(100vw - 48px)) !important;
+  height: auto !important;
+  max-height: none !important;
+
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  #rentzy-widget-root .rw-chat-window {
+    top: 16px !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    width: min(490px, calc(100vw - 32px)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #rentzy-widget-root .rw-chat-window {
+    top: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    left: 10px !important;
+    width: auto !important;
+    border-radius: 16px !important;
+  }
 }
 
 /* ============================================================
@@ -1567,12 +1602,13 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-height: 720px) {
+@media (max-height: 750px) {
   #rentzy-widget-root {
-    --rw-window-h: calc(100vh - 32px);
+    --rw-window-h: calc(100vh - 48px);
   }
   .rw-chat-window {
-    max-height: calc(100vh - 32px);
+    height: min(670px, calc(100vh - 48px));
+    max-height: calc(100vh - 48px);
   }
 }
 

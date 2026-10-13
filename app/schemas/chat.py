@@ -21,6 +21,7 @@ class ChatResponse(BaseModel):
     suggest_sales: bool = Field(default=False, description="True nếu đề xuất chuyển sang nhân viên Sales")
     suggested_options: Optional[List[str]] = Field(default=None, description="Danh sách gợi ý chọn lựa khi cần làm rõ nhu cầu")
     sources: Optional[List[Dict[str, Any]]] = Field(default=None, description="Trích dẫn các bài viết nguồn từ Story 1 nếu có")
+    handled_by: Optional[str] = Field(default=None, description="Tên Agent hoặc Sub-agent chịu trách nhiệm xử lý yêu cầu")
 
 class SessionState(BaseModel):
     session_id: str
