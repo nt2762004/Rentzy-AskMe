@@ -1,14 +1,19 @@
 """
 Web Reader Service for fetching, parsing, and caching web page content.
 Allows AI Agents to look up real-time web data and specific URLs.
+Caches fetched content directly in Redis with automatic TTL and in-memory fallback.
 """
 
 import re
 import time
+import hashlib
 import logging
 from typing import Dict, List, Optional, Tuple
 import httpx
 from bs4 import BeautifulSoup
+from redis import Redis
+
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -24,20 +29,85 @@ URL_REGEX = re.compile(r"https?://[^\s<>\"')]+", re.IGNORECASE)
 class WebReaderService:
     """
     Dịch vụ tải và trích xuất nội dung văn bản từ URL web,
-    hỗ trợ in-memory TTL caching để tối ưu tốc độ và tránh spam request.
+    lưu trữ bộ nhớ đệm (cache) trực tiếp trên Redis với TTL tự động,
+    đồng thời hỗ trợ fallback sang bộ nhớ RAM (In-Memory) nếu Redis gián đoạn.
     """
 
     def __init__(self, cache_ttl_seconds: int = 3600, timeout_seconds: float = 12.0):
         self.cache_ttl = cache_ttl_seconds
         self.timeout = timeout_seconds
-        self._cache: Dict[str, Tuple[float, str]] = {}
+        self._memory_cache: Dict[str, Tuple[float, str]] = {}
+        self._redis_client: Optional[Redis] = None
+        self._init_redis()
+
+    def _init_redis(self):
+        """Khởi tạo kết nối tới Redis cache theo cấu hình hệ thống."""
+        try:
+            if settings.REDIS_HOST:
+                client = Redis(
+                    host=settings.REDIS_HOST,
+                    port=settings.REDIS_PORT,
+                    password=settings.REDIS_PASSWORD or None,
+                    db=settings.REDIS_DB,
+                    decode_responses=True,
+                    socket_timeout=5,
+                )
+            elif settings.REDIS_URL:
+                client = Redis.from_url(settings.REDIS_URL, decode_responses=True, socket_timeout=5)
+            else:
+                client = Redis(host="localhost", port=6379, db=0, decode_responses=True, socket_timeout=2)
+            client.ping()
+            self._redis_client = client
+            logger.info("  └── [WebReader:Redis] Kết nối Redis Web Cache thành công!")
+        except Exception as exc:
+            logger.warning("  └── [WebReader:Redis] Không thể kết nối Redis (%s). Fallback sang In-Memory Cache!", exc)
+            self._redis_client = None
+
+    def _get_redis_key(self, url: str) -> str:
+        """Tạo khóa Redis chuẩn hóa theo namespace cho từng URL."""
+        url_hash = hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
+        return f"rentzy:web_cache:{url_hash}"
+
+    def _get_cached(self, url: str) -> Optional[str]:
+        """Lấy nội dung cache từ Redis hoặc In-Memory."""
+        # 1. Đọc từ Redis
+        if self._redis_client:
+            try:
+                cached = self._redis_client.get(self._get_redis_key(url))
+                if cached:
+                    logger.info("  └── [WebReader:Redis] Cache HIT (Redis) cho URL: %s", url)
+                    return cached
+            except Exception as exc:
+                logger.warning("  └── [WebReader:Redis] Lỗi khi đọc Redis cache (%s), thử In-Memory", exc)
+
+        # 2. Fallback sang In-Memory nếu Redis không khả dụng
+        now = time.time()
+        if url in self._memory_cache:
+            ts, val = self._memory_cache[url]
+            if now - ts < self.cache_ttl:
+                logger.info("  └── [WebReader:Cache] Cache HIT (In-Memory) cho URL: %s", url)
+                return val
+        return None
+
+    def _set_cached(self, url: str, content: str):
+        """Lưu nội dung vào Redis với thời hạn TTL tự động hết hạn."""
+        # 1. Lưu vào Redis
+        if self._redis_client:
+            try:
+                self._redis_client.set(self._get_redis_key(url), content, ex=self.cache_ttl)
+                logger.info("  └── [WebReader:Redis] Đã lưu cache vào Redis (TTL=%ds) cho URL: %s", self.cache_ttl, url)
+                return
+            except Exception as exc:
+                logger.warning("  └── [WebReader:Redis] Lỗi khi ghi Redis cache (%s), fallback In-Memory", exc)
+
+        # 2. Fallback sang In-Memory
+        self._memory_cache[url] = (time.time(), content)
 
     def extract_urls(self, text: str) -> List[str]:
         """Trích xuất tất cả các đường link URL hợp lệ từ một đoạn văn bản."""
         if not text:
             return []
         matches = URL_REGEX.findall(text)
-        # Loại bỏ dấu câu ở đuôi URL nếu có (như dấu chấm, phẩy, đóng ngoặc)
         cleaned_urls = []
         for url in matches:
             cleaned = url.rstrip(".,;!?)]}")
@@ -48,21 +118,18 @@ class WebReaderService:
     def fetch_url(self, url: str, max_chars: int = 3500) -> str:
         """
         Tải nội dung từ một URL, làm sạch mã HTML và trả về văn bản súc tích.
-        Kết quả được lưu vào bộ nhớ đệm (cache) theo TTL.
+        Kết quả được lưu vào bộ nhớ đệm Redis theo TTL.
         """
         url = url.strip()
         if not (url.startswith("http://") or url.startswith("https://")):
             return f"Đường dẫn không hợp lệ (URL phải bắt đầu bằng http:// hoặc https://): {url}"
 
-        # 1. Kiểm tra cache
-        now = time.time()
-        if url in self._cache:
-            timestamp, cached_content = self._cache[url]
-            if now - timestamp < self.cache_ttl:
-                logger.info("  └── [WebReader] Trả về nội dung từ Cache cho URL: %s", url)
-                return cached_content
+        # 1. Kiểm tra cache từ Redis / In-Memory
+        cached_content = self._get_cached(url)
+        if cached_content is not None:
+            return cached_content
 
-        # 2. Gửi request lấy HTML
+        # 2. Gửi request lấy HTML từ web
         headers = {
             "User-Agent": DEFAULT_USER_AGENT,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -95,7 +162,7 @@ class WebReaderService:
         # 3. Làm sạch HTML và trích xuất text có ý nghĩa
         text = self._clean_html(html_content, max_chars=max_chars)
 
-        # 3.1 Nếu là trang membership của Rentzy, bổ sung thông tin các gói từ API backend được render bằng React
+        # 3.1 Nếu là trang membership của Rentzy, bổ sung thông tin 4 gói từ API backend được render bằng React
         if "rentzy.vn/member-ship" in url:
             pkg_info = self._fetch_rentzy_membership_api()
             if pkg_info:
@@ -104,8 +171,8 @@ class WebReaderService:
         if not text:
             text = f"Đã kết nối thành công tới {url} nhưng trang web không có nội dung văn bản hiển thị."
 
-        # 4. Lưu vào cache
-        self._cache[url] = (now, text)
+        # 4. Lưu vào bộ nhớ đệm Redis
+        self._set_cached(url, text)
         return text
 
     def _fetch_rentzy_membership_api(self) -> str:
@@ -173,8 +240,17 @@ class WebReaderService:
             return html[:max_chars]
 
     def clear_cache(self):
-        """Xoá toàn bộ bộ nhớ cache."""
-        self._cache.clear()
+        """Xoá toàn bộ bộ nhớ cache trên Redis và In-Memory."""
+        if self._redis_client:
+            try:
+                keys = self._redis_client.keys("rentzy:web_cache:*")
+                if keys:
+                    self._redis_client.delete(*keys)
+                logger.info("  └── [WebReader:Redis] Đã xoá toàn bộ Redis web cache (%d keys)", len(keys) if keys else 0)
+            except Exception as exc:
+                logger.warning("  └── [WebReader:Redis] Lỗi khi xoá Redis web cache: %s", exc)
+        self._memory_cache.clear()
 
 
 web_reader_service = WebReaderService()
+
