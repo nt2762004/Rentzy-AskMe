@@ -94,12 +94,60 @@ class WebReaderService:
 
         # 3. Làm sạch HTML và trích xuất text có ý nghĩa
         text = self._clean_html(html_content, max_chars=max_chars)
+
+        # 3.1 Nếu là trang membership của Rentzy, bổ sung thông tin các gói từ API backend được render bằng React
+        if "rentzy.vn/member-ship" in url:
+            pkg_info = self._fetch_rentzy_membership_api()
+            if pkg_info:
+                text = f"{pkg_info}\n\n[Quy định & Chính sách gói]:\n{text}"
+
         if not text:
             text = f"Đã kết nối thành công tới {url} nhưng trang web không có nội dung văn bản hiển thị."
 
         # 4. Lưu vào cache
         self._cache[url] = (now, text)
         return text
+
+    def _fetch_rentzy_membership_api(self) -> str:
+        """
+        Gọi trực tiếp API backend của Rentzy (https://api.rentzy.vn/v1/consumer-membership-package/list)
+        để lấy đầy đủ thông số 4 gói thành viên thời gian thực (DC2990K, DC3990K, DC6990K, DC9990K)
+        vốn được tải động qua React/Gatsby trên trình duyệt.
+        """
+        api_url = "https://api.rentzy.vn/v1/consumer-membership-package/list"
+        try:
+            headers = {"User-Agent": DEFAULT_USER_AGENT, "Accept": "application/json"}
+            with httpx.Client(timeout=self.timeout) as client:
+                res = client.get(api_url, headers=headers)
+            if res.status_code == 200:
+                data = res.json().get("data", [])
+                lines = ["[Các gói thành viên hiển thị trên Website Rentzy]:"]
+                # Sắp xếp theo giá tăng dần
+                data = sorted(data, key=lambda x: x.get("price", 0))
+                for item in data:
+                    name = item.get("name", "")
+                    price = item.get("price", 0)
+                    months = item.get("packageTimeMonth", 24)
+                    voucher = item.get("voucherAmount", 0)
+                    contents = [c for c in item.get("contents", []) if c]
+                    first_order = item.get("maxFirstOrderValue")
+
+                    price_str = f"{price:,.0f} đ".replace(",", ".")
+                    voucher_str = f"{voucher:,.0f} đ".replace(",", ".") if voucher else ""
+
+                    line = f"- Gói {name}: Giá {price_str} ({months} tháng)"
+                    if contents:
+                        line += f"\n  + Ưu đãi: {'; '.join(contents)}"
+                    if voucher:
+                        line += f"\n  + Voucher tặng kèm: {voucher_str}"
+                    if first_order:
+                        first_order_str = f"{first_order:,.0f} đ".replace(",", ".")
+                        line += f"\n  + Hạn mức đơn đầu: {first_order_str}"
+                    lines.append(line)
+                return "\n".join(lines)
+        except Exception as exc:
+            logger.warning("  └── [WebReader] Không thể tải dữ liệu API membership (%s): %s", api_url, exc)
+        return ""
 
     def _clean_html(self, html: str, max_chars: int = 3500) -> str:
         """Loại bỏ script, style, nav, footer và chuẩn hoá khoảng trắng."""
