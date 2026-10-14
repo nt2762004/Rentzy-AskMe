@@ -6,6 +6,7 @@ import logging
 import warnings
 warnings.filterwarnings("ignore")
 
+import re
 from typing import Any, Dict, List
 
 from google import genai
@@ -53,6 +54,36 @@ def analyze_membership_query_node(state: MembershipAgentState) -> Dict[str, Any]
 
     logger.info("  └── [MembershipAgent:SubIntent] Sub-intent detected: '%s' (message='%s')", sub_intent, state["message"])
     return {"sub_intent": sub_intent}
+
+
+def _clean_support_from_chunk(text: str) -> str:
+    """Loại bỏ câu chứa hotline hoặc showroom trong chunk tri thức để không làm nhiễu LLM."""
+    lines = text.split("\n")
+    cleaned = []
+    for line in lines:
+        if any(kw in line.lower() for kw in ["0798969040", "51 đường số 41"]):
+            cleaned_line = re.sub(r"(?:Nếu Nàng cần|Nàng có thể|Vui lòng)[^.\n]*(?:hotline|0798969040|showroom|51 đường số 41)[^.\n]*(?:\.|$)", "", line)
+            if cleaned_line.strip():
+                cleaned.append(cleaned_line.strip())
+        else:
+            cleaned.append(line)
+    return "\n".join(cleaned)
+
+
+def _strip_unsolicited_contact_info(text: str) -> str:
+    """Loại bỏ dòng tự ý đưa hotline hoặc địa chỉ showroom khi người dùng không yêu cầu."""
+    lines = text.split("\n")
+    cleaned_lines = []
+    for line in lines:
+        line_clean = line.strip()
+        if any(kw in line_clean.lower() for kw in ["0798969040", "51 đường số 41"]) or (
+            any(kw in line_clean.lower() for kw in ["hotline", "showroom", "ghé showroom", "liên hệ hotline"])
+            and not any(pkg in line_clean for pkg in ["DC2990", "DC3990", "DC6990", "DC9990"])
+        ):
+            continue
+        cleaned_lines.append(line)
+    res = "\n".join(cleaned_lines)
+    return re.sub(r"\n{3,}", "\n\n", res).strip()
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +140,8 @@ def retrieve_membership_knowledge_node(state: MembershipAgentState) -> Dict[str,
         search_res = search_service.search_knowledge(search_req)
 
     for item in search_res.results:
-        chunks.append(f"- {item.content}")
+        cleaned_chunk = _clean_support_from_chunk(item.content)
+        chunks.append(f"- {cleaned_chunk}")
         sources.append({
             "chunk_id": item.chunk_id,
             "document_id": item.metadata.document_id,
@@ -170,6 +202,11 @@ def generate_membership_response_node(state: MembershipAgentState) -> Dict[str, 
 
     if not reply:
         reply = MEMBERSHIP_FALLBACK_REPLY
+
+    # Loại bỏ thông tin hotline / showroom nếu khách không yêu cầu
+    msg_lower = state["message"].lower()
+    if not any(kw in msg_lower for kw in ["hotline", "số điện thoại", "sđt", "địa chỉ", "showroom", "ở đâu"]):
+        reply = _strip_unsolicited_contact_info(reply)
 
     # Đảm bảo link đăng ký luôn xuất hiện ở cuối
     if MEMBERSHIP_REGISTER_URL not in reply:

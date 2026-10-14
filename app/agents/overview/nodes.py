@@ -82,6 +82,24 @@ def retrieve_overview_knowledge_node(state: OverviewAgentState) -> Dict[str, Any
     return {"retrieved_chunks": chunks, "sources": sources}
 
 
+import re
+
+
+def _strip_unsolicited_contact_info(text: str) -> str:
+    """Loại bỏ dòng tự ý đưa hotline hoặc địa chỉ showroom khi người dùng không yêu cầu."""
+    lines = text.split("\n")
+    cleaned_lines = []
+    for line in lines:
+        line_clean = line.strip()
+        if any(kw in line_clean.lower() for kw in ["0798969040", "51 đường số 41"]) or (
+            any(kw in line_clean.lower() for kw in ["hotline", "showroom", "ghé showroom", "liên hệ hotline"])
+        ):
+            continue
+        cleaned_lines.append(line)
+    res = "\n".join(cleaned_lines)
+    return re.sub(r"\n{3,}", "\n\n", res).strip()
+
+
 # ---------------------------------------------------------------------------
 # Node 3: Generate Response — Gemini với prompt chuyên biệt Overview
 # ---------------------------------------------------------------------------
@@ -109,6 +127,13 @@ def generate_overview_response_node(state: OverviewAgentState) -> Dict[str, Any]
     except Exception as exc:
         logger.error("  └── [OverviewAgent:LLM] Loi Gemini generate: %s", exc)
         reply = OVERVIEW_FALLBACK_REPLY
+
+    # Chỉ đưa Hotline / Showroom nếu người dùng có yêu cầu hoặc sub_intent yêu cầu
+    sub_intent = state.get("sub_intent", "general")
+    msg_lower = state["message"].lower()
+    has_contact_req = any(kw in msg_lower for kw in ["ở đâu", "địa chỉ", "showroom", "cửa hàng", "shop", "thử đồ", "hotline", "số điện thoại", "sđt", "liên hệ", "gọi"])
+    if sub_intent not in ("showroom_address", "hotline_contact") and not has_contact_req:
+        reply = _strip_unsolicited_contact_info(reply)
 
     logger.info(
         "  └── [OverviewAgent:Done] Response ready (%d chars, sub_intent='%s')",
