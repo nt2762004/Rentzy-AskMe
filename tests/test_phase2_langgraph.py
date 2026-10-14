@@ -29,7 +29,7 @@ def test_phase2_routing_logic():
         "confidence": 0.95, "need_clarification": False, "suggest_sales": False,
         "suggested_options": None, "reply_message": "", "fallback_count": 0, "sources": None
     }
-    assert route_next_step(state1) == "contact_sales"
+    assert route_next_step(state1) == "support_agent"
 
     # 2. Intent Fallback -> out_of_scope node
     state2: AgentState = {
@@ -66,7 +66,7 @@ def test_phase2_routing_logic():
         "confidence": 0.95, "need_clarification": False, "suggest_sales": False,
         "suggested_options": None, "reply_message": "", "fallback_count": 0, "sources": None
     }
-    assert route_next_step(state5) == "retrieve_knowledge"
+    assert route_next_step(state5) == "overview_agent"
 
 def test_phase2_node_outputs():
     """Kiểm tra phản hồi và biến trạng thái sinh ra từ các Node."""

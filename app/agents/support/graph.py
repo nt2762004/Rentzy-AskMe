@@ -48,6 +48,7 @@ def run(state: Dict[str, Any]) -> Dict[str, Any]:
         "session_id": state["session_id"],
         "message": state["message"],
         "chat_history": state.get("chat_history", []),
+        "is_first_turn": state.get("is_first_turn", True),
         "sub_intent": "",
         "retrieved_chunks": [],
         "sources": [],

@@ -13,6 +13,7 @@ class MembershipAgentState(TypedDict):
     session_id: str
     message: str
     chat_history: List[Dict[str, str]]
+    is_first_turn: Optional[bool]
 
     # Membership-specific fields
     sub_intent: str

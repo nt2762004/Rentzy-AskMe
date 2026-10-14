@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 from google import genai
 
 from app.core.config import settings
+from app.core.greetings import strip_opening_greeting
 from app.schemas.knowledge import SearchRequest, SearchFilter
 from app.services.search import search_service
 from app.agents.support.state import SupportAgentState
@@ -96,10 +97,12 @@ def generate_support_response_node(state: SupportAgentState) -> Dict[str, Any]:
         else "Rentzy hỗ trợ khách hàng qua Hotline 0798969040 và Showroom tại 51 đường số 41, phường Khánh Hội, TP. Hồ Chí Minh."
     )
 
+    is_first_turn = state.get("is_first_turn", True)
     prompt = build_support_prompt(
         context_str=context_str,
         message=state["message"],
         sub_intent=state.get("sub_intent", "general"),
+        is_first_turn=is_first_turn,
     )
 
     logger.info("  └── [SupportAgent:LLM] Generating response via Gemini (model=%s)...", settings.LLM_MODEL_NAME)
@@ -110,6 +113,10 @@ def generate_support_response_node(state: SupportAgentState) -> Dict[str, Any]:
     except Exception as exc:
         logger.error("  └── [SupportAgent:LLM] Loi Gemini generate: %s", exc)
         reply = SUPPORT_FALLBACK_REPLY
+
+    # Loại bỏ câu chào lặp lại nếu không phải lượt đầu tiên trong phiên
+    if not is_first_turn:
+        reply = strip_opening_greeting(reply)
 
     logger.info(
         "  └── [SupportAgent:Done] Response ready (%d chars, sub_intent='%s')",

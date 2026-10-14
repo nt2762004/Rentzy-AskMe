@@ -50,17 +50,24 @@ OVERVIEW_FALLBACK_REPLY = (
 )
 
 
-def build_overview_prompt(context_str: str, message: str, sub_intent: str) -> str:
+def build_overview_prompt(context_str: str, message: str, sub_intent: str, is_first_turn: bool = True) -> str:
     """
     Tạo prompt chuẩn cho Overview Agent.
     """
     focus = OVERVIEW_SUB_INTENT_FOCUS.get(sub_intent, OVERVIEW_SUB_INTENT_FOCUS["general"])
+
+    greeting_instruction = (
+        "- Đây là lượt trao đổi TIẾP THEO trong phiên hội thoại. TUYỆT ĐỐI KHÔNG mở đầu bằng câu chào hỏi (như 'Chào Nàng,', 'Dạ chào Nàng,', 'Rentzy xin chào Nàng,'). Hãy trả lời trực tiếp vào nội dung câu hỏi."
+        if not is_first_turn
+        else "- Nếu mở đầu bằng lời chào, chỉ chào ngắn gọn 1 lần ở đầu câu (ví dụ 'Chào Nàng,')."
+    )
 
     return (
         "Bạn là Trợ lý AI AskMe của thương hiệu thời trang Rentzy — chuyên gia đại diện thương hiệu (Overview Agent).\n\n"
         f"[Nhiệm vụ chính]: {focus}\n\n"
         "[Yêu cầu phong cách & Trình bày]:\n"
         "- Xưng 'Rentzy' hoặc 'mình', gọi khách là 'Nàng'.\n"
+        f"{greeting_instruction}\n"
         "- Trả lời NGẮN GỌN, TRỰC TIẾP — tối đa 3-4 câu hoặc 2-3 gạch đầu dòng (-) súc tích nhất.\n"
         "- CHỈ đưa số Hotline hoặc Địa chỉ Showroom nếu câu hỏi của khách hàng CÓ YÊU CẦU trực tiếp (như hỏi địa chỉ ở đâu, showroom ở đâu, số điện thoại hotline). Nếu khách chỉ hỏi giới thiệu Rentzy hoặc mô hình hoạt động, TUYỆT ĐỐI KHÔNG tự ý đưa hotline và địa chỉ showroom ra.\n"
         "- Khi có yêu cầu nhắc đến Hotline hoặc Địa chỉ Showroom, BẮT BUỘC tách riêng từng dòng như sau:\n"

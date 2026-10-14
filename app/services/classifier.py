@@ -33,6 +33,15 @@ class IntentClassifierService:
         # 1. Rule-based heuristic check trước cho câu từ ngắn/rõ ràng
         normalized_msg = message.strip().lower()
         
+        # Check câu chào hỏi đơn giản
+        from app.core.greetings import is_simple_greeting
+        if is_simple_greeting(normalized_msg):
+            return IntentClassificationResult(
+                intent=IntentEnum.RENTZY_OVERVIEW.value,
+                confidence=1.0,
+                reasoning="Rule-based fast match for simple greeting"
+            )
+
         # Check liên hệ Sales trực tiếp
         if any(kw in normalized_msg for kw in ["gặp nhân viên", "nói chuyện người thật", "gặp tư vấn", "gọi hotline", "cho xin số cskh", "nhân viên tư vấn", "tư vấn viên", "chuyên viên tư vấn"]):
             return IntentClassificationResult(

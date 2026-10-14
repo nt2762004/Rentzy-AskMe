@@ -9,6 +9,13 @@ from google.genai import types
 
 from app.core.config import settings
 from app.core.intents import INTENT_CATALOG, IntentEnum, INTENT_TO_TOPIC_MAP
+from app.core.greetings import (
+    is_simple_greeting,
+    strip_opening_greeting,
+    FAST_REPLY_GREETING_MESSAGE,
+    FAST_REPLY_CONTINUATION_GREETING_MESSAGE,
+    FAST_REPLY_SUGGESTED_OPTIONS,
+)
 from app.services.classifier import intent_classifier
 from app.services.session import session_service
 from app.services.search import search_service
@@ -36,6 +43,68 @@ class AgentState(TypedDict):
     fallback_count: int
     sources: Optional[List[Dict[str, Any]]]
     handled_by: Optional[str]
+    is_first_turn: Optional[bool]
+    is_greeting: Optional[bool]
+
+
+# ---------------------------------------------------------------------------
+# Node 0: Preprocess Input (Check Greeting & First Turn)
+# ---------------------------------------------------------------------------
+def preprocess_input_node(state: AgentState) -> Dict[str, Any]:
+    """
+    Tiền xử lý tin nhắn:
+    - Đọc chat history từ session store
+    - Xác định lượt đầu tiên (is_first_turn): True nếu chưa có câu trả lời nào của assistant trong session
+    - Kiểm tra xem có phải câu chào hỏi đơn giản (is_greeting) để áp dụng Fast Reply không cần gọi LLM
+    """
+    session = session_service.get_session(state["session_id"])
+    chat_history_dicts = [m.model_dump() for m in session.messages]
+    assistant_msgs = [m for m in session.messages if m.role == "assistant"]
+    is_first_turn = len(assistant_msgs) == 0
+    is_greeting = is_simple_greeting(state["message"])
+
+    logger.info(
+        "\n============================================================\n"
+        "[Supervisor:Inbound] Session=%s | Message='%s' | FirstTurn=%s | FastGreeting=%s",
+        state["session_id"],
+        state["message"],
+        is_first_turn,
+        is_greeting,
+    )
+
+    return {
+        "chat_history": chat_history_dicts,
+        "is_first_turn": is_first_turn,
+        "is_greeting": is_greeting,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Node 0b: Fast Reply Greeting (Zero LLM / Instant response < 5ms)
+# ---------------------------------------------------------------------------
+def fast_reply_greeting_node(state: AgentState) -> Dict[str, Any]:
+    """
+    Cơ chế phản hồi nhanh trực tiếp cho các câu chào đơn giản (hello, xin chào, alo...)
+    mà KHÔNG cần gọi LLM (Gemini Classifier hay Agent), tối ưu độ trễ và tiết kiệm quota.
+    """
+    session_service.reset_fallback_count(state["session_id"])
+    is_first = state.get("is_first_turn", True)
+    reply = FAST_REPLY_GREETING_MESSAGE if is_first else FAST_REPLY_CONTINUATION_GREETING_MESSAGE
+
+    logger.info("[Supervisor:FastReply] Phản hồi trực tiếp câu chào (FirstTurn=%s, Zero LLM)", is_first)
+
+    return {
+        "intent": IntentEnum.RENTZY_OVERVIEW.value,
+        "intent_title": "Chào hỏi & Giới thiệu",
+        "confidence": 1.0,
+        "need_clarification": False,
+        "suggest_sales": False,
+        "suggested_options": FAST_REPLY_SUGGESTED_OPTIONS,
+        "reply_message": reply,
+        "fallback_count": 0,
+        "sources": [],
+        "handled_by": "fast_reply_greeting",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -44,14 +113,7 @@ class AgentState(TypedDict):
 def classify_intent_node(state: AgentState) -> Dict[str, Any]:
     """Phân loại ý định của tin nhắn người dùng."""
     session = session_service.get_session(state["session_id"])
-    chat_history_dicts = [m.model_dump() for m in session.messages]
-
-    logger.info(
-        "\n============================================================\n"
-        "[Supervisor:Inbound] Session=%s | Message='%s'",
-        state["session_id"],
-        state["message"],
-    )
+    chat_history_dicts = state.get("chat_history") or [m.model_dump() for m in session.messages]
 
     result = intent_classifier.classify(state["message"], chat_history=chat_history_dicts)
     intent_info = INTENT_CATALOG.get(result.intent, {})
@@ -188,12 +250,19 @@ def retrieve_knowledge_node(state: AgentState) -> Dict[str, Any]:
     context_str = "\n".join(context_texts) if context_texts else "Chưa tìm thấy bài viết chi tiết trong hệ thống."
 
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    is_first_turn = state.get("is_first_turn", True)
+    greeting_instruction = (
+        "- Đây là lượt trao đổi TIẾP THEO trong phiên hội thoại. TUYỆT ĐỐI KHÔNG mở đầu bằng câu chào hỏi (như 'Chào Nàng,', 'Dạ chào Nàng,', 'Rentzy xin chào Nàng,'). Hãy trả lời trực tiếp vào nội dung câu hỏi."
+        if not is_first_turn
+        else "- Nếu mở đầu bằng lời chào, chỉ chào ngắn gọn 1 lần ở đầu câu (ví dụ 'Chào Nàng,')."
+    )
 
     prompt = (
         "Bạn là Trợ lý AI AskMe của thương hiệu thời trang Rentzy.\n"
         "Dựa vào ngữ cảnh thông tin chính thức dưới đây từ hệ thống Rentzy, hãy trả lời câu hỏi của khách hàng "
         "một cách lịch sự, tự nhiên, thân thiện (xưng 'Rentzy' hoặc 'mình', gọi khách là 'Nàng' hoặc 'khách hàng').\n\n"
         "[Yêu cầu phong cách & Trình bày]:\n"
+        f"{greeting_instruction}\n"
         "- Trả lời NGẮN GỌN, TRỰC TIẾP vào câu hỏi, TUYỆT ĐỐI KHÔNG viết đoạn văn dài dòng hay lan man.\n"
         "- Độ dài lý tưởng: Chỉ từ 2-4 dòng hoặc 2-3 gạch đầu dòng (-) súc tích nhất để giải đáp ngay thắc mắc của Nàng.\n"
         "- Khi liệt kê các ý/quyền lợi/chi tiết, BẮT BUỘC dùng dấu gạch đầu dòng (-) ở đầu mỗi ý.\n"
@@ -210,6 +279,9 @@ def retrieve_knowledge_node(state: AgentState) -> Dict[str, Any]:
     except Exception as e:
         logger.error("Lỗi tổng hợp câu trả lời (%s)", e)
         reply = context_texts[0] if context_texts else "Rentzy xin chào Nàng! Nàng cần hỗ trợ thông tin gì ạ?"
+
+    if not is_first_turn:
+        reply = strip_opening_greeting(reply)
 
     logger.info("[Supervisor:Worker] Xử lý câu hỏi qua [GeneralKnowledgeNode]")
     return {
@@ -347,14 +419,21 @@ ENABLE_CATALOG_AGENT = False  # Tạm thời để upcoming theo yêu cầu
 # Router Logic
 # ---------------------------------------------------------------------------
 def route_next_step(state: AgentState) -> str:
-    # 1. Các Sub-Agents đang hoạt động chính thức
-    if state["intent"] == IntentEnum.MEMBERSHIP.value:
+    # 1. Guardrails & Fallbacks (ưu tiên kiểm tra tính mơ hồ và độ tin cậy thấp trước)
+    if state["intent"] == IntentEnum.FALLBACK.value:
+        target = "out_of_scope"
+    elif state.get("confidence", 0) < 0.70:
+        target = "fallback"
+    elif state.get("need_clarification") and state.get("confidence", 0) < 0.90:
+        target = "clarification"
+    # 2. Các Sub-Agents đang hoạt động chính thức
+    elif state["intent"] == IntentEnum.MEMBERSHIP.value:
         target = "membership_agent"
     elif state["intent"] in (IntentEnum.RENTZY_OVERVIEW.value, IntentEnum.SHOWROOM_FITTING.value):
         target = "overview_agent"
     elif state["intent"] in (IntentEnum.CONTACT_SUPPORT.value, IntentEnum.ORDER_SUPPORT.value):
         target = "support_agent"
-    # 2. Các Sub-Agents tạm thời chuyển sang Upcoming
+    # 3. Các Sub-Agents tạm thời chuyển sang Upcoming
     elif state["intent"] in (
         IntentEnum.DEPOSIT_POLICY.value,
         IntentEnum.DEPOSIT_REFUND.value,
@@ -369,18 +448,22 @@ def route_next_step(state: AgentState) -> str:
         IntentEnum.LIQUIDATION.value,
     ):
         target = "catalog_agent" if ENABLE_CATALOG_AGENT else "upcoming_feature"
-    # 3. Guardrails & Fallbacks
-    elif state["intent"] == IntentEnum.FALLBACK.value:
-        target = "out_of_scope"
-    elif state.get("need_clarification") and state.get("confidence", 0) < 0.90:
-        target = "clarification"
-    elif state.get("confidence", 0) < 0.70:
-        target = "fallback"
     else:
         target = "upcoming_feature"
 
     logger.info("[Supervisor:Router] Điều hướng đến Target Node: [%s]", target)
     return target
+
+
+def route_entry(state: AgentState) -> str:
+    """
+    Điều hướng ở cửa ngõ đầu vào:
+    - Nếu là câu chào đơn giản (hello, xin chào, alo...) -> kích hoạt Fast Reply tức thì (< 5ms, Zero LLM).
+    - Ngược lại -> chuyển sang Classifier và các Agent chuyên biệt.
+    """
+    if state.get("is_greeting"):
+        return "fast_reply_greeting"
+    return "classify"
 
 
 # ---------------------------------------------------------------------------
@@ -389,7 +472,11 @@ def route_next_step(state: AgentState) -> str:
 def build_dialogue_graph():
     workflow = StateGraph(AgentState)
 
-    # Nodes
+    # Inbound & Fast-Reply Nodes
+    workflow.add_node("preprocess", preprocess_input_node)
+    workflow.add_node("fast_reply_greeting", fast_reply_greeting_node)
+
+    # Core & Sub-Agent Nodes
     workflow.add_node("classify", classify_intent_node)
     workflow.add_node("membership_agent", membership_agent_node)
     workflow.add_node("overview_agent", overview_agent_node)
@@ -403,8 +490,21 @@ def build_dialogue_graph():
     workflow.add_node("out_of_scope", out_of_scope_node)
     workflow.add_node("upcoming_feature", upcoming_feature_node)
 
-    # Entry point
-    workflow.set_entry_point("classify")
+    # Entry point is preprocess
+    workflow.set_entry_point("preprocess")
+
+    # Conditional routing from preprocess
+    workflow.add_conditional_edges(
+        "preprocess",
+        route_entry,
+        {
+            "fast_reply_greeting": "fast_reply_greeting",
+            "classify": "classify",
+        },
+    )
+
+    # Fast reply leads directly to END (No LLM called)
+    workflow.add_edge("fast_reply_greeting", END)
 
     # Conditional routing from classify
     workflow.add_conditional_edges(

@@ -10,6 +10,7 @@ class SupportAgentState(TypedDict):
     session_id: str
     message: str
     chat_history: List[Dict[str, str]]
+    is_first_turn: Optional[bool]
     sub_intent: str
     retrieved_chunks: List[str]
     sources: List[Dict[str, Any]]

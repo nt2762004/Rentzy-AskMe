@@ -13,6 +13,7 @@ from google import genai
 from google.genai import types
 
 from app.core.config import settings
+from app.core.greetings import strip_opening_greeting
 from app.schemas.knowledge import SearchRequest, SearchFilter
 from app.services.search import search_service
 from app.services.web_reader import web_reader_service
@@ -168,10 +169,12 @@ def generate_membership_response_node(state: MembershipAgentState) -> Dict[str, 
         else "Chưa tìm thấy thông tin chi tiết về gói thành viên trong hệ thống."
     )
 
+    is_first_turn = state.get("is_first_turn", True)
     prompt = build_membership_prompt(
         context_str=context_str,
         message=state["message"],
         sub_intent=state.get("sub_intent", "overview"),
+        is_first_turn=is_first_turn,
     )
 
     logger.info("  └── [MembershipAgent:LLM] Generating response via Gemini Tool-Calling (model=%s, tool=fetch_web_page)...", settings.LLM_MODEL_NAME)
@@ -202,6 +205,10 @@ def generate_membership_response_node(state: MembershipAgentState) -> Dict[str, 
 
     if not reply:
         reply = MEMBERSHIP_FALLBACK_REPLY
+
+    # Loại bỏ câu chào lặp lại nếu không phải lượt đầu tiên trong phiên
+    if not is_first_turn:
+        reply = strip_opening_greeting(reply)
 
     # Loại bỏ thông tin hotline / showroom nếu khách không yêu cầu
     msg_lower = state["message"].lower()

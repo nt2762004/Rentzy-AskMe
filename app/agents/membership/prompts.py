@@ -34,11 +34,17 @@ MEMBERSHIP_FALLBACK_REPLY = (
 )
 
 
-def build_membership_prompt(context_str: str, message: str, sub_intent: str) -> str:
+def build_membership_prompt(context_str: str, message: str, sub_intent: str, is_first_turn: bool = True) -> str:
     """
     Tạo prompt chuẩn chỉnh cho Gemini xử lý riêng biệt intent Membership với hỗ trợ Web Tool Calling.
     """
     focus = SUB_INTENT_FOCUS.get(sub_intent, SUB_INTENT_FOCUS["overview"])
+
+    greeting_instruction = (
+        "- Đây là lượt trao đổi TIẾP THEO trong phiên hội thoại. TUYỆT ĐỐI KHÔNG mở đầu bằng câu chào hỏi (như 'Chào Nàng,', 'Dạ chào Nàng,', 'Rentzy xin chào Nàng,'). Hãy trả lời trực tiếp vào nội dung câu hỏi."
+        if not is_first_turn
+        else "- Nếu mở đầu bằng lời chào, chỉ chào ngắn gọn 1 lần ở đầu câu (ví dụ 'Chào Nàng,')."
+    )
 
     return (
         "Bạn là Trợ lý AI AskMe của thương hiệu thời trang Rentzy — chuyên gia về Gói thành viên (Membership).\n\n"
@@ -48,6 +54,7 @@ def build_membership_prompt(context_str: str, message: str, sub_intent: str) -> 
         "- Nếu câu hỏi yêu cầu tra cứu một đường link cụ thể hoặc cần dữ liệu mới nhất trên website mà trong dữ liệu chưa có, hãy chủ động gọi tool `fetch_web_page(url)` để đọc dữ liệu.\n\n"
         "[Yêu cầu phong cách & Trình bày]:\n"
         "- Xưng 'Rentzy' hoặc 'mình', gọi khách là 'Nàng'.\n"
+        f"{greeting_instruction}\n"
         "- Trả lời NGẮN GỌN, TRỰC TIẾP — tối đa 4-5 gạch đầu dòng hoặc 3-4 câu súc tích.\n"
         "- Dùng dấu gạch đầu dòng (-) khi liệt kê gói, quyền lợi, mức phí.\n"
         "- TUYỆT ĐỐI KHÔNG tự ý đưa số hotline, số điện thoại hay địa chỉ showroom vào câu trả lời (kể cả khi trong dữ liệu tri thức có nhắc tới). Hiện tại chỉ đưa hotline/địa chỉ khi khách hàng có yêu cầu trực tiếp hoặc intent là support.\n"

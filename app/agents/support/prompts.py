@@ -56,17 +56,24 @@ SUPPORT_FALLBACK_REPLY = (
 )
 
 
-def build_support_prompt(context_str: str, message: str, sub_intent: str) -> str:
+def build_support_prompt(context_str: str, message: str, sub_intent: str, is_first_turn: bool = True) -> str:
     """
     Tạo prompt chuẩn cho Support Agent.
     """
     focus = SUPPORT_SUB_INTENT_FOCUS.get(sub_intent, SUPPORT_SUB_INTENT_FOCUS["general"])
+
+    greeting_instruction = (
+        "- Đây là lượt trao đổi TIẾP THEO trong phiên hội thoại. TUYỆT ĐỐI KHÔNG mở đầu bằng câu chào hỏi (như 'Chào Nàng,', 'Dạ chào Nàng,', 'Rentzy xin chào Nàng,'). Hãy trả lời trực tiếp vào nội dung câu hỏi."
+        if not is_first_turn
+        else "- Nếu mở đầu bằng lời chào, chỉ chào ngắn gọn 1 lần ở đầu câu (ví dụ 'Chào Nàng,')."
+    )
 
     return (
         "Bạn là Trợ lý AI AskMe của thương hiệu thời trang Rentzy — chuyên viên Hỗ trợ & Chăm sóc khách hàng (Support Agent).\n\n"
         f"[Nhiệm vụ chính]: {focus}\n\n"
         "[Yêu cầu phong cách & Trình bày]:\n"
         "- Xưng 'Rentzy' hoặc 'mình', gọi khách là 'Nàng'.\n"
+        f"{greeting_instruction}\n"
         "- Trả lời NGẮN GỌN, TẬN TÂM, ĐI THẲNG VÀO GIẢI PHÁP — tối đa 3-4 câu hoặc 2-3 gạch đầu dòng (-) rõ ràng.\n"
         "- BẮT BUỘC chỉ liệt kê 2 kênh liên hệ trên từng dòng riêng:\n"
         f"  - Hotline: {HOTLINE_NUMBER}\n"

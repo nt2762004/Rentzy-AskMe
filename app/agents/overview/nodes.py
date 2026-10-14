@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 from google import genai
 
 from app.core.config import settings
+from app.core.greetings import strip_opening_greeting
 from app.schemas.knowledge import SearchRequest, SearchFilter
 from app.services.search import search_service
 from app.agents.overview.state import OverviewAgentState
@@ -113,10 +114,12 @@ def generate_overview_response_node(state: OverviewAgentState) -> Dict[str, Any]
         else "Rentzy là dịch vụ cho thuê trang phục dạ hội và thời trang cao cấp tại TP. Hồ Chí Minh."
     )
 
+    is_first_turn = state.get("is_first_turn", True)
     prompt = build_overview_prompt(
         context_str=context_str,
         message=state["message"],
         sub_intent=state.get("sub_intent", "general"),
+        is_first_turn=is_first_turn,
     )
 
     logger.info("  └── [OverviewAgent:LLM] Generating response via Gemini (model=%s)...", settings.LLM_MODEL_NAME)
@@ -127,6 +130,10 @@ def generate_overview_response_node(state: OverviewAgentState) -> Dict[str, Any]
     except Exception as exc:
         logger.error("  └── [OverviewAgent:LLM] Loi Gemini generate: %s", exc)
         reply = OVERVIEW_FALLBACK_REPLY
+
+    # Loại bỏ câu chào lặp lại nếu không phải lượt đầu tiên trong phiên
+    if not is_first_turn:
+        reply = strip_opening_greeting(reply)
 
     # Chỉ đưa Hotline / Showroom nếu người dùng có yêu cầu hoặc sub_intent yêu cầu
     sub_intent = state.get("sub_intent", "general")

@@ -13,6 +13,7 @@ class OverviewAgentState(TypedDict):
     session_id: str
     message: str
     chat_history: List[Dict[str, str]]
+    is_first_turn: Optional[bool]
 
     # Overview-specific fields
     sub_intent: str
