@@ -1,5 +1,5 @@
 """
-Execution nodes for Membership Agent sub-graph.
+Execution nodes for Membership Agent sub-graph with Agentic Tool Calling.
 """
 
 import logging
@@ -9,11 +9,14 @@ warnings.filterwarnings("ignore")
 from typing import Any, Dict, List
 
 from google import genai
+from google.genai import types
 
 from app.core.config import settings
 from app.schemas.knowledge import SearchRequest, SearchFilter
 from app.services.search import search_service
+from app.services.web_reader import web_reader_service
 from app.agents.membership.state import MembershipAgentState
+from app.agents.membership.tools import fetch_web_page
 from app.agents.membership.prompts import (
     MEMBERSHIP_REGISTER_URL,
     MEMBERSHIP_FALLBACK_REPLY,
@@ -24,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Node 1: Analyze Query — nhận diện sub-intent
+# Node 1: Analyze Query — nhận diện sub-intent (hỗ trợ web_lookup)
 # ---------------------------------------------------------------------------
 def analyze_membership_query_node(state: MembershipAgentState) -> Dict[str, Any]:
     """
@@ -33,7 +36,11 @@ def analyze_membership_query_node(state: MembershipAgentState) -> Dict[str, Any]
     msg = state["message"].lower()
     sub_intent = "overview"
 
-    if any(kw in msg for kw in ["dang ky", "đăng ký", "tham gia", "mua gói", "muốn có", "sign up"]):
+    # Kiểm tra URL hoặc nhu cầu tra cứu link/web
+    urls = web_reader_service.extract_urls(state["message"])
+    if urls or any(kw in msg for kw in ["tra cứu", "link", "url", "website", "trên web", "trên mạng", "trang web", "web"]):
+        sub_intent = "web_lookup"
+    elif any(kw in msg for kw in ["dang ky", "đăng ký", "tham gia", "mua gói", "muốn có", "sign up"]):
         sub_intent = "register"
     elif any(kw in msg for kw in ["so sánh", "khác nhau", "phân biệt", "nên chọn"]):
         sub_intent = "compare"
@@ -49,13 +56,46 @@ def analyze_membership_query_node(state: MembershipAgentState) -> Dict[str, Any]
 
 
 # ---------------------------------------------------------------------------
-# Node 2: Retrieve Knowledge — Qdrant search với topic=membership
+# Node 2: Retrieve Knowledge — Qdrant search + Web Lookup Dual Guarantee
 # ---------------------------------------------------------------------------
 def retrieve_membership_knowledge_node(state: MembershipAgentState) -> Dict[str, Any]:
     """
     Truy xuất knowledge từ Qdrant với filter topic=membership, top_k=5.
-    Nếu không có kết quả sẽ fallback sang free search.
+    Nếu phát hiện URL hoặc sub_intent=web_lookup, cào dữ liệu web trực tiếp
+    vào chunks làm context dự phòng (Dual-Guarantee).
     """
+    chunks: List[str] = []
+    sources: List[Dict[str, Any]] = []
+
+    # 1. Kiểm tra URL trong tin nhắn hoặc sub_intent web_lookup để cào dữ liệu web
+    urls = web_reader_service.extract_urls(state["message"])
+    if urls:
+        for idx, url in enumerate(urls):
+            logger.info("  └── [MembershipAgent:Knowledge] Phát hiện URL '%s' trong câu hỏi, đang nạp dữ liệu...", url)
+            web_content = web_reader_service.fetch_url(url)
+            chunks.append(f"[Nội dung tra cứu từ link {url}]:\n{web_content}")
+            sources.append({
+                "chunk_id": f"web_{idx}_{abs(hash(url))}",
+                "document_id": "web_live",
+                "record_id": "web_live",
+                "score": 1.0,
+                "source_url": url,
+            })
+    elif state.get("sub_intent") == "web_lookup":
+        # Không có URL cụ thể -> pre-fetch trang membership chính thức
+        default_url = MEMBERSHIP_REGISTER_URL
+        logger.info("  └── [MembershipAgent:Knowledge] Sub-intent là web_lookup, nạp trước URL chính thức: %s", default_url)
+        web_content = web_reader_service.fetch_url(default_url)
+        chunks.append(f"[Nội dung trang chính thức {default_url}]:\n{web_content}")
+        sources.append({
+            "chunk_id": f"web_default_{abs(hash(default_url))}",
+            "document_id": "web_live",
+            "record_id": "web_live",
+            "score": 1.0,
+            "source_url": default_url,
+        })
+
+    # 2. Truy xuất thêm từ Vector DB Qdrant
     search_req = SearchRequest(
         query=state["message"],
         top_k=5,
@@ -68,9 +108,6 @@ def retrieve_membership_knowledge_node(state: MembershipAgentState) -> Dict[str,
         search_req.filter.topic = None
         search_res = search_service.search_knowledge(search_req)
 
-    chunks: List[str] = []
-    sources: List[Dict[str, Any]] = []
-
     for item in search_res.results:
         chunks.append(f"- {item.content}")
         sources.append({
@@ -81,21 +118,21 @@ def retrieve_membership_knowledge_node(state: MembershipAgentState) -> Dict[str,
             "source_url": item.metadata.source_url,
         })
 
-    logger.info("  └── [MembershipAgent:Knowledge] Qdrant: %d chunks retrieved (filter=membership)", len(chunks))
+    logger.info("  └── [MembershipAgent:Knowledge] Total chunks: %d (web=%d, qdrant=%d)", len(chunks), 1 if (urls or state.get("sub_intent") == "web_lookup") else 0, len(search_res.results))
     return {"retrieved_chunks": chunks, "sources": sources}
 
 
 # ---------------------------------------------------------------------------
-# Node 3: Generate Response — Gemini với prompt chuyên biệt Membership
+# Node 3: Generate Response — Gemini với Tool Calling fetch_web_page
 # ---------------------------------------------------------------------------
 def generate_membership_response_node(state: MembershipAgentState) -> Dict[str, Any]:
     """
-    Sinh câu trả lời bằng Gemini với prompt chuyên biệt cho Membership.
+    Sinh câu trả lời bằng Gemini tích hợp Agentic Tool Calling (fetch_web_page).
     Luôn đảm bảo có link https://rentzy.vn/member-ship/ trong reply.
     """
     context_str = (
-        "\n".join(state["retrieved_chunks"])
-        if state["retrieved_chunks"]
+        "\n\n".join(state["retrieved_chunks"])
+        if state.get("retrieved_chunks")
         else "Chưa tìm thấy thông tin chi tiết về gói thành viên trong hệ thống."
     )
 
@@ -105,16 +142,36 @@ def generate_membership_response_node(state: MembershipAgentState) -> Dict[str, 
         sub_intent=state.get("sub_intent", "overview"),
     )
 
-    logger.info("  └── [MembershipAgent:LLM] Generating response via Gemini (model=%s)...", settings.LLM_MODEL_NAME)
+    logger.info("  └── [MembershipAgent:LLM] Generating response via Gemini Tool-Calling (model=%s, tool=fetch_web_page)...", settings.LLM_MODEL_NAME)
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    reply = ""
+
+    # Kích hoạt Agentic Tool Calling thông qua Gemini Chat AFC
     try:
-        res = client.models.generate_content(model=settings.LLM_MODEL_NAME, contents=prompt)
-        reply = res.text.strip()
+        chat = client.chats.create(
+            model=settings.LLM_MODEL_NAME,
+            config=types.GenerateContentConfig(
+                tools=[fetch_web_page],
+                temperature=0.2,
+            ),
+        )
+        res = chat.send_message(prompt)
+        if res and res.text:
+            reply = res.text.strip()
     except Exception as exc:
-        logger.error("  └── [MembershipAgent:LLM] Loi Gemini generate: %s", exc)
+        logger.warning("  └── [MembershipAgent:LLM] Tool-calling chat gap loi (%s), fallback sang generate_content...", exc)
+        try:
+            res = client.models.generate_content(model=settings.LLM_MODEL_NAME, contents=prompt)
+            if res and res.text:
+                reply = res.text.strip()
+        except Exception as exc_gen:
+            logger.error("  └── [MembershipAgent:LLM] Loi Gemini generate_content: %s", exc_gen)
+            reply = MEMBERSHIP_FALLBACK_REPLY
+
+    if not reply:
         reply = MEMBERSHIP_FALLBACK_REPLY
 
-    # Đảm bảo link luôn xuất hiện
+    # Đảm bảo link đăng ký luôn xuất hiện ở cuối
     if MEMBERSHIP_REGISTER_URL not in reply:
         reply += f"\n\n{MEMBERSHIP_REGISTER_URL}"
 
@@ -131,3 +188,4 @@ def generate_membership_response_node(state: MembershipAgentState) -> Dict[str, 
         "need_clarification": False,
         "handled_by": "membership_agent",
     }
+

@@ -112,11 +112,12 @@ INTENT_CATALOG: Dict[str, Dict[str, Any]] = {
     IntentEnum.MEMBERSHIP.value: {
         "title": "Gói thành viên & Quyền lợi Membership",
         "description": "Thông tin các gói hội viên (Silver, Gold, VIP), mức phí đăng ký và quyền lợi ưu đãi.",
-        "keywords": ["gói thành viên", "membership", "hội viên", "rentzy pass", "xem_goi", "chinh_sach"],
+        "keywords": ["gói thành viên", "membership", "member-ship", "hội viên", "rentzy pass", "xem_goi", "chinh_sach", "rentzy.vn/member-ship", "gói silver", "gói gold", "gói vip"],
         "examples": [
             "Rentzy có các gói thành viên ưu đãi nào?",
             "Quyền lợi của gói hội viên VIP là gì?",
-            "Các gói membership"
+            "Các gói membership",
+            "Tra cứu link https://rentzy.vn/member-ship/"
         ]
     },
     IntentEnum.LIQUIDATION.value: {

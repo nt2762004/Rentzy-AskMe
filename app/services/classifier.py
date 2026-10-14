@@ -41,6 +41,14 @@ class IntentClassifierService:
                 reasoning="Rule-based keyword match for Contact Support"
             )
 
+        # Check gói thành viên / membership
+        if any(kw in normalized_msg for kw in ["gói thành viên", "membership", "member-ship", "hội viên", "rentzy.vn/member-ship", "gói silver", "gói gold", "gói vip"]):
+            return IntentClassificationResult(
+                intent=IntentEnum.MEMBERSHIP.value,
+                confidence=0.98,
+                reasoning="Rule-based keyword match for Membership"
+            )
+
         # 2. Tạo prompt hệ thống với danh mục 14 Intent
         intent_descriptions = "\n".join([
             f"- `{code}` ({info['title']}): {info['description']} (Từ khóa tiêu biểu: {', '.join(info['keywords'][:5])})"
