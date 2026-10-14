@@ -16,8 +16,8 @@ PRONOUNS_OR_NAMES = {
 }
 
 PARTICLES = {
-    "ạ", "a", "nha", "nhé", "nhe", "nè", "ne", "ơi", "oi", "nhở", "đó", "do",
-    "ha", "á", "à", "nghen", "hen"
+    "ạ", "a", "nha", "nhé", "nhe", "nhá", "nhaaa", "nè", "ne", "ơi", "oi", "nhở", "đó", "do",
+    "ha", "á", "à", "nghen", "hen", "nhen", "nà"
 }
 
 GREETING_PREFIX_PATTERNS = [
@@ -70,7 +70,7 @@ def is_simple_greeting(text: str) -> bool:
     clean_collapsed = " ".join(tokens)
 
     # 1. Các mẫu gọi tên đơn giản: 'shop ơi', 'rentzy ơi', 'ad ơi'
-    if re.match(r"^(?:rentzy|shop|ad|admin)\s+(?:ơi|oi|ạ|a)(?:\s+(?:ạ|a|nha|nhé|nhe))?$", clean_collapsed):
+    if re.match(r"^(?:rentzy|shop|ad|admin)\s+(?:ơi|oi|ạ|a)(?:\s+(?:ạ|a|nha|nhé|nhe|nhá|nè|nghen|nhen))?$", clean_collapsed):
         return True
 
     # 2. Bắt đầu bằng từ chào

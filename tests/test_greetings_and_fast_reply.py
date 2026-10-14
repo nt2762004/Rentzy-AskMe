@@ -38,6 +38,9 @@ def test_is_simple_greeting_positive():
         "alo",
         "alo ạ",
         "ad ơi",
+        "chào shop nhá",
+        "chào shop nhen",
+        "chào shop nhe",
     ]
     for text in greetings:
         assert is_simple_greeting(text) is True, f"Failed positive match for: '{text}'"

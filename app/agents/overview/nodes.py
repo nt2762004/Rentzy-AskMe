@@ -32,7 +32,7 @@ def analyze_overview_query_node(state: OverviewAgentState) -> Dict[str, Any]:
     msg = state["message"].lower()
     sub_intent = "general"
 
-    if any(kw in msg for kw in ["ở đâu", "showroom", "địa chỉ", "cửa hàng", "shop", "đến đâu", "thử đồ"]):
+    if any(kw in msg for kw in ["ở đâu", "showroom", "địa chỉ", "cửa hàng ở đâu", "shop ở đâu", "đến đâu", "thử đồ"]):
         sub_intent = "showroom_address"
     elif any(kw in msg for kw in ["hotline", "số điện thoại", "sđt", "liên hệ", "gọi cho"]):
         sub_intent = "hotline_contact"
@@ -138,7 +138,7 @@ def generate_overview_response_node(state: OverviewAgentState) -> Dict[str, Any]
     # Chỉ đưa Hotline / Showroom nếu người dùng có yêu cầu hoặc sub_intent yêu cầu
     sub_intent = state.get("sub_intent", "general")
     msg_lower = state["message"].lower()
-    has_contact_req = any(kw in msg_lower for kw in ["ở đâu", "địa chỉ", "showroom", "cửa hàng", "shop", "thử đồ", "hotline", "số điện thoại", "sđt", "liên hệ", "gọi"])
+    has_contact_req = any(kw in msg_lower for kw in ["ở đâu", "địa chỉ", "showroom", "cửa hàng ở đâu", "shop ở đâu", "thử đồ", "hotline", "số điện thoại", "sđt", "liên hệ", "gọi"])
     if sub_intent not in ("showroom_address", "hotline_contact") and not has_contact_req:
         reply = _strip_unsolicited_contact_info(reply)
 
