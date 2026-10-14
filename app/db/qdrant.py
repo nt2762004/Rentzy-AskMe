@@ -2,24 +2,32 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from app.core.config import settings
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def get_qdrant_client() -> QdrantClient:
-    """Tạo client kết nối Qdrant."""
+    """Tạo client kết nối Qdrant với timeout 5.0s tránh treo app khi khởi động."""
     if settings.QDRANT_API_KEY:
-        return QdrantClient(url=settings.QDRANT_URL, api_key=settings.QDRANT_API_KEY)
-    return QdrantClient(url=settings.QDRANT_URL)
+        return QdrantClient(url=settings.QDRANT_URL, api_key=settings.QDRANT_API_KEY, timeout=5.0)
+    return QdrantClient(url=settings.QDRANT_URL, timeout=5.0)
 
 def init_qdrant_collection(client: QdrantClient = None, force_recreate: bool = False) -> None:
     """
     Khởi tạo collection trong Qdrant và đánh Payload Index 
     cho tất cả các trường metadata (status, topic, approver, version, source_url).
     """
-    if client is None:
-        client = get_qdrant_client()
+    try:
+        if client is None:
+            client = get_qdrant_client()
 
-    collection_name = settings.QDRANT_COLLECTION_NAME
+        collection_name = settings.QDRANT_COLLECTION_NAME
 
-    collections = client.get_collections().collections
-    collection_names = [c.name for c in collections]
+        collections = client.get_collections().collections
+        collection_names = [c.name for c in collections]
+    except Exception as exc:
+        logger.warning(f"Không thể kết nối Qdrant khi khởi động ({exc}). Bỏ qua bước kiểm tra collection.")
+        return
 
     need_recreate = force_recreate
     if collection_name in collection_names and not force_recreate:

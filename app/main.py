@@ -41,17 +41,24 @@ from app.core.config import settings
 from app.api.v1.health import router as health_router
 from app.api.v1.knowledge import router as knowledge_router
 from app.api.v1.chat import router as chat_router
+import asyncio
 from app.db.postgres import init_postgres_db
 from app.db.qdrant import init_qdrant_collection
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Khởi tạo Postgres & Qdrant Cloud khi ứng dụng khởi động
-    try:
-        init_postgres_db()
-        init_qdrant_collection()
-    except Exception as e:
-        print(f"[Lifespan Warning] Khởi tạo DB/Qdrant: {e}")
+    # Khởi tạo Postgres & Qdrant Cloud dạng background task để Server mở Port lập tức (tránh Render Deploy Timeout)
+    async def _init_services():
+        try:
+            init_postgres_db()
+        except Exception as e:
+            logger.warning(f"[Lifespan Warning] Khởi tạo DB: {e}")
+        try:
+            init_qdrant_collection()
+        except Exception as e:
+            logger.warning(f"[Lifespan Warning] Khởi tạo Qdrant: {e}")
+
+    asyncio.create_task(_init_services())
     yield
 
 app = FastAPI(
@@ -98,4 +105,5 @@ def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False)

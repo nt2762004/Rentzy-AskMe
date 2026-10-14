@@ -25,8 +25,13 @@ try:
     elif "?channel_binding=require" in db_url:
         db_url = db_url.replace("?channel_binding=require", "")
 
+    connect_args = {}
+    if "postgresql" in db_url:
+        connect_args["connect_timeout"] = 5
+
     engine = create_engine(
         db_url,
+        connect_args=connect_args,
         pool_pre_ping=True,
         echo=False
     )
