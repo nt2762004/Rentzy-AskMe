@@ -19,6 +19,7 @@ from app.core.greetings import (
 from app.services.classifier import intent_classifier
 from app.services.session import session_service
 from app.services.search import search_service
+from app.services.llm import llm_service
 from app.schemas.knowledge import SearchRequest, SearchFilter
 
 # Sub-agents
@@ -274,7 +275,7 @@ def retrieve_knowledge_node(state: AgentState) -> Dict[str, Any]:
     )
 
     try:
-        res = client.models.generate_content(model=settings.LLM_MODEL_NAME, contents=prompt)
+        res = llm_service.generate_content(contents=prompt)
         reply = res.text.strip()
     except Exception as e:
         logger.error("Lỗi tổng hợp câu trả lời (%s)", e)

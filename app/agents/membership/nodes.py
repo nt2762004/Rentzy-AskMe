@@ -17,6 +17,7 @@ from app.core.greetings import strip_opening_greeting
 from app.schemas.knowledge import SearchRequest, SearchFilter
 from app.services.search import search_service
 from app.services.web_reader import web_reader_service
+from app.services.llm import llm_service
 from app.agents.membership.state import MembershipAgentState
 from app.agents.membership.tools import fetch_web_page
 from app.agents.membership.prompts import (
@@ -177,33 +178,18 @@ def generate_membership_response_node(state: MembershipAgentState) -> Dict[str, 
         is_first_turn=is_first_turn,
     )
 
-    logger.info("  └── [MembershipAgent:LLM] Generating response via Gemini Tool-Calling (model=%s, tool=fetch_web_page)...", settings.LLM_MODEL_NAME)
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    reply = ""
-
-    # Kích hoạt Agentic Tool Calling thông qua Gemini Chat AFC
+    logger.info(
+        "  └── [MembershipAgent:LLM] Generating response via Gemini Tool-Calling (model pool: %s, tool=fetch_web_page)...",
+        llm_service.get_model_pool(),
+    )
     try:
-        chat = client.chats.create(
-            model=settings.LLM_MODEL_NAME,
-            config=types.GenerateContentConfig(
-                tools=[fetch_web_page],
-                temperature=0.2,
-            ),
-        )
-        res = chat.send_message(prompt)
-        if res and res.text:
-            reply = res.text.strip()
+        reply = llm_service.send_chat_message(
+            prompt=prompt,
+            tools=[fetch_web_page],
+            temperature=0.2,
+        ) or MEMBERSHIP_FALLBACK_REPLY
     except Exception as exc:
-        logger.warning("  └── [MembershipAgent:LLM] Tool-calling chat gap loi (%s), fallback sang generate_content...", exc)
-        try:
-            res = client.models.generate_content(model=settings.LLM_MODEL_NAME, contents=prompt)
-            if res and res.text:
-                reply = res.text.strip()
-        except Exception as exc_gen:
-            logger.error("  └── [MembershipAgent:LLM] Loi Gemini generate_content: %s", exc_gen)
-            reply = MEMBERSHIP_FALLBACK_REPLY
-
-    if not reply:
+        logger.error("  └── [MembershipAgent:LLM] Loi toan bo model pool Gemini: %s", exc)
         reply = MEMBERSHIP_FALLBACK_REPLY
 
     # Loại bỏ câu chào lặp lại nếu không phải lượt đầu tiên trong phiên

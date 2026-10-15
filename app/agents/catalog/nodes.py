@@ -12,6 +12,7 @@ from google import genai
 from app.core.config import settings
 from app.schemas.knowledge import SearchRequest, SearchFilter
 from app.services.search import search_service
+from app.services.llm import llm_service
 from app.agents.catalog.state import CatalogAgentState
 from app.agents.catalog.prompts import (
     CATALOG_FALLBACK_REPLY,
@@ -112,10 +113,9 @@ def generate_catalog_response_node(state: CatalogAgentState) -> Dict[str, Any]:
         sub_intent=state.get("sub_intent", "general"),
     )
 
-    logger.info("  └── [CatalogAgent:LLM] Generating response via Gemini (model=%s)...", settings.LLM_MODEL_NAME)
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    logger.info("  └── [CatalogAgent:LLM] Generating response via Gemini (model pool: %s)...", llm_service.get_model_pool())
     try:
-        res = client.models.generate_content(model=settings.LLM_MODEL_NAME, contents=prompt)
+        res = llm_service.generate_content(contents=prompt)
         reply = res.text.strip()
     except Exception as exc:
         logger.error("  └── [CatalogAgent:LLM] Loi Gemini generate: %s", exc)

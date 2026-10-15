@@ -9,6 +9,7 @@ from google.genai import types
 from pydantic import BaseModel, Field
 from app.core.config import settings
 from app.core.intents import INTENT_CATALOG, IntentEnum
+from app.services.llm import llm_service
 
 logger = logging.getLogger(__name__)
 
@@ -90,8 +91,7 @@ BẮT BUỘC TRẢ VỀ DẠNG JSON SCHEMA CHÍNH XÁC:
             prompt = f"Ngữ cảnh hội thoại gần đây:\n{history_str}\n\n{prompt}"
 
         try:
-            response = self._client.models.generate_content(
-                model=settings.LLM_MODEL_NAME,
+            response = llm_service.generate_content(
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
