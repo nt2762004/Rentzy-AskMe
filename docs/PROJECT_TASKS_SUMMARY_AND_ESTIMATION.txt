@@ -1,0 +1,16 @@
+================================================================================
+BẢNG TỔNG HỢP HIGH-LEVEL TASKS & ESTIMATE THỜI GIAN (HOURLY ESTIMATE)
+DỰ ÁN: RENTZY - TRỢ LÝ THỜI TRANG AI ASKME
+================================================================================
+
++-----+---------------------------------------------------------------+----------+
+| STT | High-Level Task                                               | Estimate |
++-----+---------------------------------------------------------------+----------+
+| 01  | Rentzy Knowledge Base (Kho tri thức chuẩn hóa & RAG)          | 4.5 giờ  |
+| 02  | Intent Recognition & Dialogue Routing (Lõi đàm thoại)         | 3.0 giờ  |
+| 03  | Frontend UI: Thiết kế & Cải tiến Chatbot Widget               | 1.0 giờ  |
+| 04  | Multi-Agent Architecture: Nâng cấp kiến trúc Đa tác nhân      | 1.5 giờ  |
+| 05  | Agentic Tool Calling: Web Lookup                              | 1.0 giờ  |
++-----+---------------------------------------------------------------+----------+
+|     | TỔNG CỘNG THỜI GIAN ESTIMATE                                  | 11.0 giờ |
++-----+---------------------------------------------------------------+----------+
