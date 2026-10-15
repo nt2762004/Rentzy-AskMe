@@ -113,9 +113,9 @@ def generate_policy_response_node(state: PolicyAgentState) -> Dict[str, Any]:
     )
 
     logger.info("  └── [PolicyAgent:LLM] Generating response via Gemini (model=%s)...", settings.LLM_MODEL_NAME)
-    from app.services.llm import llm_service
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
     try:
-        res = llm_service.generate_content(contents=prompt)
+        res = client.models.generate_content(model=settings.LLM_MODEL_NAME, contents=prompt)
         reply = res.text.strip()
     except Exception as exc:
         logger.error("  └── [PolicyAgent:LLM] Loi Gemini generate: %s", exc)
