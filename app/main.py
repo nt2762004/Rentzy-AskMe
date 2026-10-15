@@ -41,6 +41,7 @@ from app.core.config import settings
 from app.api.v1.health import router as health_router
 from app.api.v1.knowledge import router as knowledge_router
 from app.api.v1.chat import router as chat_router
+from app.api.v1.meta_webhook import router as meta_router
 import asyncio
 from app.db.postgres import init_postgres_db
 from app.db.qdrant import init_qdrant_collection
@@ -81,6 +82,7 @@ app.add_middleware(
 app.include_router(health_router, prefix=settings.API_V1_STR)
 app.include_router(knowledge_router, prefix=settings.API_V1_STR)
 app.include_router(chat_router, prefix=settings.API_V1_STR)
+app.include_router(meta_router, prefix=settings.API_V1_STR)
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse

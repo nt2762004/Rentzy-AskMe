@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL_NAME: str = "gemini-embedding-2"
     EMBEDDING_DIMENSION: int = 3072
 
+    # Meta (Facebook Messenger & Instagram) Config
+    META_VERIFY_TOKEN: str = "rentzy_meta_secret_token_2026"
+    META_PAGE_ACCESS_TOKEN: Optional[str] = None
+    META_API_VERSION: str = "v19.0"
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()
