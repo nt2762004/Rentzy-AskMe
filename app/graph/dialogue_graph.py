@@ -273,8 +273,9 @@ def retrieve_knowledge_node(state: AgentState) -> Dict[str, Any]:
         f"[Câu hỏi của khách hàng]: \"{state['message']}\"\n"
     )
 
+    from app.services.llm import llm_service
     try:
-        res = client.models.generate_content(model=settings.LLM_MODEL_NAME, contents=prompt)
+        res = llm_service.generate_content(contents=prompt)
         reply = res.text.strip()
     except Exception as e:
         logger.error("Lỗi tổng hợp câu trả lời (%s)", e)

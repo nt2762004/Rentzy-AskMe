@@ -32,7 +32,8 @@ class Settings(BaseSettings):
     # Gemini & Embedding Config
     GEMINI_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
-    LLM_MODEL_NAME: str = "gemini-flash-lite-latest"
+    LLM_MODEL_NAME: str = "gemini-3.1-flash-lite"
+    LLM_FALLBACK_MODELS: list[str] = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.5-flash"]
     EMBEDDING_MODEL_NAME: str = "gemini-embedding-2"
     EMBEDDING_DIMENSION: int = 3072
 

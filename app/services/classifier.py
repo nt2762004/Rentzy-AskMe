@@ -9,6 +9,7 @@ from google.genai import types
 from pydantic import BaseModel, Field
 from app.core.config import settings
 from app.core.intents import INTENT_CATALOG, IntentEnum
+from app.services.llm import llm_service
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,11 @@ class IntentClassifierService:
             )
 
         # Check gói thành viên / membership
-        if any(kw in normalized_msg for kw in ["gói thành viên", "membership", "member-ship", "hội viên", "rentzy.vn/member-ship", "gói silver", "gói gold", "gói vip"]):
+        if any(kw in normalized_msg for kw in [
+            "gói thành viên", "membership", "member-ship", "hội viên", "rentzy.vn/member-ship", 
+            "gói silver", "gói gold", "gói vip", "so sánh gói", "2 gói", "các gói", "gói dc",
+            "so sánh 2 gói", "gói nào", "đăng ký gói"
+        ]):
             return IntentClassificationResult(
                 intent=IntentEnum.MEMBERSHIP.value,
                 confidence=0.98,
@@ -90,8 +95,7 @@ BẮT BUỘC TRẢ VỀ DẠNG JSON SCHEMA CHÍNH XÁC:
             prompt = f"Ngữ cảnh hội thoại gần đây:\n{history_str}\n\n{prompt}"
 
         try:
-            response = self._client.models.generate_content(
-                model=settings.LLM_MODEL_NAME,
+            response = llm_service.generate_content(
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,

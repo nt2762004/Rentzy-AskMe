@@ -123,9 +123,9 @@ def generate_overview_response_node(state: OverviewAgentState) -> Dict[str, Any]
     )
 
     logger.info("  └── [OverviewAgent:LLM] Generating response via Gemini (model=%s)...", settings.LLM_MODEL_NAME)
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+    from app.services.llm import llm_service
     try:
-        res = client.models.generate_content(model=settings.LLM_MODEL_NAME, contents=prompt)
+        res = llm_service.generate_content(contents=prompt)
         reply = res.text.strip()
     except Exception as exc:
         logger.error("  └── [OverviewAgent:LLM] Loi Gemini generate: %s", exc)

@@ -181,27 +181,34 @@ def generate_membership_response_node(state: MembershipAgentState) -> Dict[str, 
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
     reply = ""
 
-    # Kích hoạt Agentic Tool Calling thông qua Gemini Chat AFC
-    try:
-        chat = client.chats.create(
-            model=settings.LLM_MODEL_NAME,
-            config=types.GenerateContentConfig(
-                tools=[fetch_web_page],
-                temperature=0.2,
-            ),
-        )
-        res = chat.send_message(prompt)
-        if res and res.text:
-            reply = res.text.strip()
-    except Exception as exc:
-        logger.warning("  └── [MembershipAgent:LLM] Tool-calling chat gap loi (%s), fallback sang generate_content...", exc)
+    # Kích hoạt Agentic Tool Calling thông qua Gemini Chat AFC với cơ chế Failover sang model dự phòng
+    candidates = [settings.LLM_MODEL_NAME] + [m for m in settings.LLM_FALLBACK_MODELS if m != settings.LLM_MODEL_NAME]
+    for idx, model_name in enumerate(candidates):
         try:
-            res = client.models.generate_content(model=settings.LLM_MODEL_NAME, contents=prompt)
+            if idx > 0:
+                logger.warning("  └── [MembershipAgent:Failover] Đang thử model dự phòng: [%s]...", model_name)
+            chat = client.chats.create(
+                model=model_name,
+                config=types.GenerateContentConfig(
+                    tools=[fetch_web_page],
+                    temperature=0.2,
+                ),
+            )
+            res = chat.send_message(prompt)
             if res and res.text:
                 reply = res.text.strip()
-        except Exception as exc_gen:
-            logger.error("  └── [MembershipAgent:LLM] Loi Gemini generate_content: %s", exc_gen)
-            reply = MEMBERSHIP_FALLBACK_REPLY
+                if idx > 0:
+                    logger.info("  └── [MembershipAgent:Failover] Model dự phòng [%s] phản hồi THÀNH CÔNG!", model_name)
+                break
+        except Exception as exc:
+            logger.warning("  └── [MembershipAgent:LLM] Model [%s] gặp lỗi (%s), tiếp tục thử...", model_name, str(exc).split("\n")[0][:100])
+            try:
+                res = client.models.generate_content(model=model_name, contents=prompt)
+                if res and res.text:
+                    reply = res.text.strip()
+                    break
+            except Exception:
+                continue
 
     if not reply:
         reply = MEMBERSHIP_FALLBACK_REPLY
