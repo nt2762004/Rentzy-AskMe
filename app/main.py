@@ -15,6 +15,7 @@ logging.basicConfig(
     force=True,
 )
 logging.getLogger("app").setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Ẩn hoàn toàn log HTTP và warning từ các thư viện ngoài
 import warnings
