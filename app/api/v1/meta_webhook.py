@@ -41,10 +41,11 @@ def verify_meta_webhook(
         verify_token,
     )
 
-    expected_token = (settings.META_VERIFY_TOKEN or "rentzy_meta_secret_token_2026").strip()
+    expected_token = (settings.META_VERIFY_TOKEN or "rentzy_meta_2026").strip()
 
     if mode == "subscribe" and verify_token and (
-        verify_token.strip() == expected_token or verify_token.strip() == "rentzy_meta_secret_token_2026"
+        verify_token.strip() == expected_token
+        or verify_token.strip() in ["rentzy_meta_2026", "rentzy_meta_secret_token_2026"]
     ):
         logger.info("[MetaWebhook:Verify] Xác thực thành công! Trả về hub.challenge: %s", challenge)
         return PlainTextResponse(content=str(challenge or ""), status_code=status.HTTP_200_OK)

@@ -15,7 +15,7 @@ def test_meta_webhook_verification_success():
         "/api/v1/meta/webhook",
         params={
             "hub.mode": "subscribe",
-            "hub.verify_token": "rentzy_meta_secret_token_2026",
+            "hub.verify_token": "rentzy_meta_2026",
             "hub.challenge": "challenge_code_987654",
         },
     )
